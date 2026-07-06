@@ -13,10 +13,10 @@ export const rootApi = createApi({
 		baseUrl: String(import.meta.env.VITE_BACKEND_BASE_URL),
 	}),
 	endpoints: (builder) => ({
-		getUser: builder.query<MeResponseType, null>({
+		getUser: builder.query<MeResponseType, void>({
 			query: () => "/auth/me",
 		}),
-		logoutUser: builder.query<LogoutResponseType, null>({
+		logoutUser: builder.query<LogoutResponseType, void>({
 			query: () => "/auth/logout",
 		}),
 		loginUser: builder.mutation<LoginResponseType, LoginRequestType>({
