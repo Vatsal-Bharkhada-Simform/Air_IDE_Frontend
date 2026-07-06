@@ -1,7 +1,3 @@
-// ==========================================
-//           SKIP THIS FILE
-// ==========================================
-
 import { useGetUserQuery } from "@/store/api/api";
 import { Navigate, Outlet } from "react-router";
 
