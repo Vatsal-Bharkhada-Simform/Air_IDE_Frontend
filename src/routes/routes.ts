@@ -3,6 +3,7 @@ import { LoginPage } from "@/pages/LoginPage";
 import { SignUpPage } from "@/pages/SignUpPage";
 import { ProtectedRoute } from "./ProtectedRoute";
 import { DashboardPage } from "@/pages/DashboardPage";
+import { SessionRoomPage } from "@/pages/SessionRoomPage";
 
 export const router = createBrowserRouter([
 	{
@@ -25,6 +26,10 @@ export const router = createBrowserRouter([
 			{
 				index: true,
 				Component: DashboardPage,
+			},
+			{
+				path: "session/:roomId",
+				Component: SessionRoomPage,
 			},
 		],
 	},

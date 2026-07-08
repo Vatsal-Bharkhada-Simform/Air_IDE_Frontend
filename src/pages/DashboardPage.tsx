@@ -541,7 +541,7 @@ export function DashboardPage() {
 								{username}
 							</span>
 						</div>
-						<Separator orientation="vertical" className="h-5" />
+						<Separator orientation="vertical" />
 						<LogoutButton />
 					</div>
 				</div>
