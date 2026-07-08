@@ -386,8 +386,11 @@ export function SessionRoomPage() {
 			return;
 		}
 
-		setFileContents((prev) => ({ ...prev, [activeFileId]: value ?? "" }));
 		if (activeFileId) {
+			setFileContents((prev) => ({
+				...prev,
+				[activeFileId]: value ?? "",
+			}));
 			setDirtyFiles((prev) => new Set(prev).add(activeFileId));
 		}
 
