@@ -7,6 +7,15 @@ import type {
 	SignUpRequestType,
 	SignUpResponseType,
 } from "../../types/authTypes";
+import type {
+	CreateFileRequest,
+	CreateFileResponse,
+	CreateSessionRequest,
+	CreateSessionResponse,
+	GetSessionResponse,
+	ListFilesResponse,
+	ListSessionsResponse,
+} from "../../types/collabTypes";
 
 export const rootApi = createApi({
 	baseQuery: fetchBaseQuery({
@@ -34,6 +43,32 @@ export const rootApi = createApi({
 				body: userData,
 			}),
 		}),
+		createSession: builder.mutation<
+			CreateSessionResponse,
+			CreateSessionRequest
+		>({
+			query: (body) => ({
+				url: "/sessions",
+				method: "POST",
+				body,
+			}),
+		}),
+		listSessions: builder.query<ListSessionsResponse, void>({
+			query: () => "/sessions",
+		}),
+		getSession: builder.query<GetSessionResponse, string>({
+			query: (inviteCode) => `/sessions/${inviteCode}`,
+		}),
+		createFile: builder.mutation<CreateFileResponse, CreateFileRequest>({
+			query: ({ sessionId, ...body }) => ({
+				url: `/sessions/${sessionId}/files`,
+				method: "POST",
+				body,
+			}),
+		}),
+		listFiles: builder.query<ListFilesResponse, string>({
+			query: (sessionId) => `/sessions/${sessionId}/files`,
+		}),
 	}),
 });
 
@@ -42,4 +77,9 @@ export const {
 	useLoginUserMutation,
 	useSignupUserMutation,
 	useLogoutUserQuery,
+	useCreateSessionMutation,
+	useListSessionsQuery,
+	useGetSessionQuery,
+	useCreateFileMutation,
+	useListFilesQuery,
 } = rootApi;

@@ -1,9 +1,8 @@
 import { createBrowserRouter } from "react-router";
-// import App from "@/App";
 import { LoginPage } from "@/pages/LoginPage";
 import { SignUpPage } from "@/pages/SignUpPage";
 import { ProtectedRoute } from "./ProtectedRoute";
-import App from "@/App";
+import { DashboardPage } from "@/pages/DashboardPage";
 
 export const router = createBrowserRouter([
 	{
@@ -25,7 +24,7 @@ export const router = createBrowserRouter([
 		children: [
 			{
 				index: true,
-				Component: App,
+				Component: DashboardPage,
 			},
 		],
 	},

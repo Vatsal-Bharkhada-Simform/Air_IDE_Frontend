@@ -131,3 +131,78 @@ export interface CursorSelectedEvent {
 export interface SocketErrorEvent {
 	message: string;
 }
+
+export interface SessionData {
+	id: string;
+	name: string;
+	inviteCode: string;
+	createdBy: string;
+	isActive: boolean;
+	createdAt: string;
+	updatedAt: string;
+	creator: SessionCreator;
+}
+
+export interface SessionDataWithCounts extends SessionData {
+	_count: { files: number; participants: number };
+}
+
+export interface SessionDataWithFiles extends SessionData {
+	files: (SessionFile & { updatedAt: string })[];
+}
+
+export interface CreateSessionRequest {
+	name: string;
+}
+
+export interface CreateSessionResponse {
+	success: boolean;
+	message: string;
+	data: {
+		session: SessionData;
+	};
+}
+
+export interface ListSessionsResponse {
+	success: boolean;
+	data: {
+		sessions: SessionDataWithCounts[];
+	};
+}
+
+export interface GetSessionResponse {
+	success: boolean;
+	data: {
+		session: SessionDataWithFiles;
+	};
+}
+
+export interface CreateFileRequest {
+	sessionId: string;
+	filename: string;
+	language?: string;
+	content?: string;
+}
+
+export interface CreateFileResponse {
+	success: boolean;
+	message: string;
+	data: {
+		file: SessionFile & {
+			sessionId: string;
+			content: string;
+			createdAt: string;
+			updatedAt: string;
+		};
+	};
+}
+
+export interface ListFilesResponse {
+	success: boolean;
+	data: {
+		files: (SessionFile & {
+			createdAt: string;
+			updatedAt: string;
+		})[];
+	};
+}
