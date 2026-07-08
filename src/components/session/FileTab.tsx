@@ -21,10 +21,11 @@ export function FileTab({
 			className={`
 				group flex items-center gap-1.5 px-3 py-2 border-r border-border
 				text-sm cursor-pointer select-none whitespace-nowrap transition-colors
+				border-b-2
 				${
 					isActive
-						? "bg-background text-foreground border-b-2 border-b-primary"
-						: "bg-muted/40 text-muted-foreground hover:bg-muted/80 hover:text-foreground"
+						? "bg-background text-foreground border-b-primary"
+						: "bg-muted/40 text-muted-foreground hover:bg-muted/80 hover:text-foreground border-b-transparent"
 				}
 			`}
 			onClick={onClick}

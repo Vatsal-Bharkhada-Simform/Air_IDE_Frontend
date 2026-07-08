@@ -41,7 +41,7 @@ export function FilesPanel({
 							<button
 								key={file.id}
 								className={`
-									group w-full flex items-center gap-2 px-3 py-1.5 text-sm
+									group w-full flex items-center gap-2 px-3 py-2
 									transition-colors hover:bg-muted text-left
 									${
 										activeFileId === file.id
@@ -52,7 +52,7 @@ export function FilesPanel({
 								onClick={() => onFileClick(file)}
 							>
 								<FileCode className="h-3.5 w-3.5 shrink-0" />
-								<span className="flex-1 truncate text-xs">
+								<span className="flex-1 truncate text-sm">
 									{file.filename}
 								</span>
 								{/* Live viewers avatars */}

@@ -11,6 +11,7 @@ import type { SocketConnectionStatus } from "@/types/collabTypes";
 import { ConnectionChip } from "./ConnectionChip";
 import { InviteCodeBadge } from "./InviteCodeBadge";
 import { getInitials } from "./helpers";
+import { ThemeToggle } from "@/components/theme-toggle";
 
 export interface SessionHeaderProps {
 	sessionName: string;
@@ -30,7 +31,7 @@ export function SessionHeader({
 	return (
 		<header className="sticky top-0 z-40 flex h-12 items-center justify-between border-b border-border bg-card/90 backdrop-blur-md px-3 shrink-0">
 			{/* Left */}
-			<div className="flex items-center gap-2">
+			<div className="flex items-center gap-4">
 				<Tooltip>
 					<TooltipTrigger
 						render={
@@ -48,21 +49,14 @@ export function SessionHeader({
 					<TooltipContent>Back to dashboard</TooltipContent>
 				</Tooltip>
 
-				<SeparatorUI orientation="vertical" className="h-4" />
-
 				<div className="flex items-center gap-1.5">
 					<div className="flex h-5 w-5 items-center justify-center rounded bg-primary text-primary-foreground">
 						<Zap className="h-3 w-3" />
 					</div>
-					<span className="text-sm font-bold tracking-tight hidden sm:block">
+					<span className="text-md font-bold tracking-tight hidden sm:block">
 						Air IDE
 					</span>
 				</div>
-
-				<SeparatorUI
-					orientation="vertical"
-					className="h-4 hidden sm:block"
-				/>
 
 				<span className="text-sm font-medium truncate max-w-[180px]">
 					{sessionName}
@@ -77,8 +71,9 @@ export function SessionHeader({
 
 			{/* Right */}
 			<div className="flex items-center gap-2">
-				<Avatar className="h-7 w-7">
-					<AvatarFallback className="bg-primary/10 text-primary text-[11px] font-semibold">
+				<ThemeToggle />
+				<Avatar className="h-8 w-8">
+					<AvatarFallback className="bg-primary/10 text-primary text-xs font-semibold">
 						{getInitials(username)}
 					</AvatarFallback>
 				</Avatar>

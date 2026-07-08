@@ -21,8 +21,8 @@ export function ConnectionChip({ status }: { status: SocketConnectionStatus }) {
 	const Icon = config.icon;
 
 	return (
-		<div className="flex items-center gap-1.5 text-xs">
-			<Icon className={`h-3.5 w-3.5 ${config.cls}`} />
+		<div className="flex items-center gap-1.5 text-sm">
+			<Icon className={`w-4 h-4 -mt-1 ${config.cls}`} />
 			<span
 				className={
 					status === "connected"

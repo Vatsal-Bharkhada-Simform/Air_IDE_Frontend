@@ -15,6 +15,7 @@ import {
 	Check,
 	Loader2,
 } from "lucide-react";
+import { ThemeToggle } from "@/components/theme-toggle";
 
 import {
 	useGetUserQuery,
@@ -530,6 +531,7 @@ export function DashboardPage() {
 
 					{/* Right side */}
 					<div className="flex items-center gap-3">
+						<ThemeToggle />
 						{/* User profile */}
 						<div className="flex items-center gap-2">
 							<Avatar className="h-8 w-8">

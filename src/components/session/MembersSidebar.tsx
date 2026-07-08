@@ -66,14 +66,14 @@ export function MembersSidebar({
 							<TooltipTrigger className={"w-full"}>
 								<div
 									className={`
-										flex items-center gap-2.5 rounded mx-1.5 px-1.5 py-1.5
+										flex items-center gap-2.5 rounded-md mx-1.5 p-2
 										transition-colors hover:bg-muted cursor-default
 										${collapsed ? "justify-center" : ""}
 									`}
 								>
 									{/* Avatar with online ring */}
 									<div className="relative shrink-0">
-										<Avatar className="h-7 w-7">
+										<Avatar className="h-8 w-8">
 											<AvatarFallback
 												className="text-xs font-semibold text-white"
 												style={{
@@ -93,12 +93,12 @@ export function MembersSidebar({
 									</div>
 
 									{!collapsed && (
-										<div className="min-w-0 flex-1">
+										<div className="min-w-0 flex-1 text-left">
 											<p className="text-sm font-medium truncate leading-none">
 												{user.username}
 											</p>
 											{isInActiveFile && (
-												<p className="text-[10px] text-muted-foreground mt-0.5">
+												<p className="text-xs text-muted-foreground mt-0.5">
 													L{user.cursor.line} · C
 													{user.cursor.column}
 												</p>
