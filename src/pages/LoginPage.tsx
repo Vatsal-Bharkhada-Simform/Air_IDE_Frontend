@@ -5,6 +5,8 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 
 import { useLoginUserMutation } from "../store/api/api";
+import { useApiDispatch } from "../store/store";
+import { setToken } from "../store/slices/authSlice";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
 import { Label } from "../components/ui/label";
@@ -25,6 +27,7 @@ const loginSchema = z.object({
 
 export function LoginPage() {
 	const navigate = useNavigate();
+	const dispatch = useApiDispatch();
 	const [loginUser, { isLoading }] = useLoginUserMutation();
 	const [serverError, setServerError] = useState<string | null>(null);
 
@@ -41,6 +44,7 @@ export function LoginPage() {
 			setServerError(null);
 			const response = await loginUser(values).unwrap();
 			if (response.success) {
+				dispatch(setToken(response.data.token));
 				navigate("/", { replace: true });
 			}
 		} catch (error: any) {

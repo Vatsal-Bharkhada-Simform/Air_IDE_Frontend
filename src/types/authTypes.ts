@@ -12,6 +12,7 @@ export type LoginResponseType = {
 			username: string;
 			email: string;
 		};
+		token: string;
 	};
 };
 
@@ -31,6 +32,7 @@ export type SignUpResponseType = {
 			email: string;
 			createdAt: string;
 		};
+		token: string;
 	};
 };
 
@@ -47,5 +49,6 @@ export type MeResponseType = {
 			email: string;
 			username: string;
 		};
+		token: string;
 	};
 };

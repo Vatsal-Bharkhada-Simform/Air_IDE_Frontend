@@ -16,6 +16,7 @@ import type {
 	ListFilesResponse,
 	ListSessionsResponse,
 } from "../../types/collabTypes";
+import { setToken } from "../slices/authSlice";
 
 export const rootApi = createApi({
 	baseQuery: fetchBaseQuery({
@@ -25,6 +26,14 @@ export const rootApi = createApi({
 	endpoints: (builder) => ({
 		getUser: builder.query<MeResponseType, void>({
 			query: () => "/auth/me",
+			onQueryStarted: async (_, { dispatch, queryFulfilled }) => {
+				const { data } = await queryFulfilled;
+				console.log(data);
+
+				if (data.data.token) {
+					dispatch(setToken(data.data.token));
+				}
+			},
 		}),
 		logoutUser: builder.query<LogoutResponseType, void>({
 			query: () => "/auth/logout",

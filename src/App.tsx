@@ -4,7 +4,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 
 function App() {
 	return (
-		<TooltipProvider delayDuration={300}>
+		<TooltipProvider delay={100} closeDelay={100}>
 			<RouterProvider router={router} />
 		</TooltipProvider>
 	);

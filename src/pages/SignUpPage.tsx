@@ -5,6 +5,8 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 
 import { useSignupUserMutation } from "../store/api/api";
+import { useApiDispatch } from "../store/store";
+import { setToken } from "../store/slices/authSlice";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
 import { Label } from "../components/ui/label";
@@ -30,6 +32,7 @@ const signupSchema = z.object({
 
 export function SignUpPage() {
 	const navigate = useNavigate();
+	const dispatch = useApiDispatch();
 	const [signupUser, { isLoading }] = useSignupUserMutation();
 	const [serverError, setServerError] = useState<string | null>(null);
 
@@ -46,6 +49,7 @@ export function SignUpPage() {
 			setServerError(null);
 			const response = await signupUser(values).unwrap();
 			if (response.success) {
+				dispatch(setToken(response.data.token));
 				navigate("/");
 			}
 		} catch (error: any) {
