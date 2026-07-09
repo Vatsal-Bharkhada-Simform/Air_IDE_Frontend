@@ -4,6 +4,7 @@ import type { OnMount } from "@monaco-editor/react";
 import type * as MonacoType from "monaco-editor";
 
 import {
+	collabApi,
 	useJoinSessionQuery,
 	useOpenFileQuery,
 	useEditFileMutation,
@@ -16,13 +17,19 @@ import {
 	useListFilesQuery,
 	useCreateFileMutation,
 } from "@/store/api/api";
-import type { EditorChanges } from "@/types/collabTypes";
-import { useRootSelector } from "@/store/store";
+import type {
+	EditorChanges,
+	FileEditedEvent,
+	TextSelection,
+} from "@/types/collabTypes";
+import { useRootSelector, useRootDispatch } from "@/store/store";
 import type {
 	SessionFile,
 	SessionUser,
 	SocketConnectionStatus,
 } from "@/types/collabTypes";
+import { getSocket } from "@/store/socketManager";
+import { applyDeltaToModel } from "@/utils/applyEditorChanges";
 
 // Sub-components
 import { SessionHeader } from "@/components/session/SessionHeader";
@@ -38,9 +45,77 @@ import { langFromFilename } from "@/components/session/helpers";
 
 /* ─── Session Room Page ───────────────────────────────────── */
 
+/* ─── Pure helpers (outside component, no hooks) ─────────────── */
+
+/**
+ * Given a file:edit delta, shift every remote user's cursor / selection
+ * that falls on or below the affected line range.
+ *
+ * @param users    - Current array of remote SessionUsers
+ * @param changes  - The EditorChanges delta that was just applied
+ * @returns        - New users array with corrected cursor / selection positions
+ */
+function shiftCursorsForEdit(
+	users: SessionUser[],
+	changes: EditorChanges
+): SessionUser[] {
+	const { from, to, text } = changes;
+	const linesRemoved = to.line - from.line; // how many lines the range spans
+	const linesAdded = text.length - 1; // how many newlines the replacement has
+	const lineDelta = linesAdded - linesRemoved;
+
+	// Same-line replacement — no line count change, cursor positions unaffected
+	if (lineDelta === 0) return users;
+
+	return users.map((u) => {
+		const cursor = u.cursor;
+		if (!cursor || cursor.line <= from.line + 1) {
+			// Cursor is on or before the first affected line — no shift
+			return u;
+		}
+
+		const shiftedLine = Math.max(from.line + 1, cursor.line + lineDelta);
+
+		const shiftedSelection = u.selection
+			? shiftSelection(u.selection, from.line, lineDelta)
+			: null;
+
+		return {
+			...u,
+			cursor: { ...cursor, line: shiftedLine },
+			selection: shiftedSelection,
+		};
+	});
+}
+
+/**
+ * Shift a TextSelection by `lineDelta` for lines that fall after `fromLine`.
+ */
+function shiftSelection(
+	sel: TextSelection,
+	fromLine: number,
+	lineDelta: number
+): TextSelection {
+	return {
+		startLine:
+			sel.startLine > fromLine + 1
+				? Math.max(fromLine + 1, sel.startLine + lineDelta)
+				: sel.startLine,
+		startColumn: sel.startColumn,
+		endLine:
+			sel.endLine > fromLine + 1
+				? Math.max(fromLine + 1, sel.endLine + lineDelta)
+				: sel.endLine,
+		endColumn: sel.endColumn,
+	};
+}
+
+/* ─── Session Room Page ───────────────────────────────────── */
+
 export function SessionRoomPage() {
 	const { roomId } = useParams<{ roomId: string }>();
 	const navigate = useNavigate();
+	const dispatch = useRootDispatch();
 
 	// ── Auth & user ──────────────────────────────────────────
 	const token = useRootSelector((state) => state.auth.token);
@@ -141,10 +216,174 @@ export function SessionRoomPage() {
 	const activeFileIdRef = useRef(activeFileId);
 	activeFileIdRef.current = activeFileId;
 
+	const pendingChangesRef = useRef<EditorChanges[]>([]);
+
+	// Per-file last-received sequence number — used to detect & discard
+	// duplicate or out-of-order deltas from the backend.
+	const lastSeqRef = useRef<Record<string, number>>({});
+
+	const MAX_WAIT_MS = 500;
+	const DEBOUNCE_MS = 150;
+	const batchStartRef = useRef<number | null>(null);
+	// Disposable for the onDidChangeModelContent listener — cleaned up on re-mount
+	const contentChangeDisposableRef = useRef<MonacoType.IDisposable | null>(
+		null
+	);
+
+	/**
+	 * Coalesce an array of granular EditorChanges into fewer, larger deltas
+	 * to reduce socket payload size.  Handles:
+	 *  1. Consecutive single-char INSERTS on the same line → merge text
+	 *  2. Consecutive single-char BACKSPACES on the same line → widen range
+	 *  3. Everything else → pass through as-is
+	 */
+	function coalesceChanges(changes: EditorChanges[]): EditorChanges[] {
+		const merged: EditorChanges[] = [];
+		for (const change of changes) {
+			const last = merged[merged.length - 1];
+
+			// ── Detect change types ──────────────────────────
+			const isInsert =
+				change.from.line === change.to.line &&
+				change.from.ch === change.to.ch &&
+				change.text.length === 1 &&
+				change.text[0].length === 1;
+
+			const isBackspace =
+				change.text.length === 1 &&
+				change.text[0] === "" &&
+				change.from.line === change.to.line &&
+				change.to.ch - change.from.ch === 1;
+
+			// ── Try to merge with the previous change ─────────
+			if (last) {
+				const lastIsInsert =
+					last.from.line === last.to.line &&
+					last.from.ch === last.to.ch &&
+					last.text.length === 1;
+
+				const lastIsBackspace =
+					last.text.length === 1 && last.text[0] === "";
+
+				// Merge consecutive single-char inserts on the same line
+				if (
+					isInsert &&
+					lastIsInsert &&
+					change.from.line === last.from.line &&
+					change.from.ch === last.from.ch + last.text[0].length
+				) {
+					last.text[0] += change.text[0];
+					continue;
+				}
+
+				// Merge consecutive single-char backspaces on the same line
+				// Backspace moves the cursor left, so the new `from` sits
+				// one char before the previous `from`.
+				if (
+					isBackspace &&
+					lastIsBackspace &&
+					change.from.line === last.from.line &&
+					change.to.ch === last.from.ch
+				) {
+					last.from = { ...change.from };
+					continue;
+				}
+			}
+
+			// No merge possible — push as a new entry
+			merged.push({
+				from: { ...change.from },
+				to: { ...change.to },
+				text: [...change.text],
+			});
+		}
+
+		return merged;
+	}
+
+	function flushChanges() {
+		if (editDebounceRef.current) clearTimeout(editDebounceRef.current);
+		editDebounceRef.current = null;
+		batchStartRef.current = null;
+
+		const batch = coalesceChanges(pendingChangesRef.current);
+		pendingChangesRef.current = [];
+
+		const sid = sessionIdRef.current;
+		const fid = activeFileIdRef.current;
+		if (batch.length === 0 || !sid || !fid) return;
+		void editFile({ sessionId: sid, fileId: fid, changes: batch });
+	}
+
+	// ── Remote edit listener ─────────────────────────────────
+	// Listens for file:edited directly on the socket (NOT through RTK cache)
+	// so we can apply deltas via editor.executeEdits(), which is incremental
+	// and preserves the undo stack and cursor — unlike setting the value prop.
+	useEffect(() => {
+		const socket = getSocket(); // null until connectSocket() is called by useJoinSessionQuery
+		if (!socket || !activeFileId || !sessionId) return;
+
+		const onEdited = (event: FileEditedEvent) => {
+			if (event.fileId !== activeFileId) return;
+
+			// ── Sequence-number guard ──────────────────────────
+			// Discard deltas that are older than what we've already applied.
+			// Socket.IO guarantees FIFO per connection so this is mainly a
+			// safety net for reconnect replays or batching edge-cases.
+			const lastSeq = lastSeqRef.current[activeFileId] ?? 0;
+			if (event.seq <= lastSeq) return;
+			lastSeqRef.current[activeFileId] = event.seq;
+
+			const editor = editorRef.current;
+			if (!editor) return;
+
+			const model = editor.getModel();
+			if (!model) return;
+
+			// ── Apply delta directly to Monaco model ───────────
+			// Mark as remote so handleContentChange won't re-broadcast it.
+			isRemoteEditRef.current = true;
+			applyDeltaToModel(model, event.changes);
+
+			// ── Sync fileContents mirror ───────────────────────
+			// Keep our per-file content map in sync so tab-switch restores
+			// and Ctrl+S always have the latest content.
+			const updatedContent = model.getValue();
+			setFileContents((prev) => ({
+				...prev,
+				[activeFileId]: updatedContent,
+			}));
+
+			// ── Shift remote cursors for line-count changes ────
+			// Apply the shift for each delta in the batch sequentially.
+			dispatch(
+				collabApi.util.updateQueryData(
+					"joinSession",
+					{ inviteCode: roomId ?? "", token: token ?? "" },
+					(draft) => {
+						for (const change of event.changes) {
+							draft.users = shiftCursorsForEdit(
+								draft.users,
+								change
+							);
+						}
+					}
+				)
+			);
+		};
+
+		socket.on("file:edited", onEdited);
+		return () => {
+			socket.off("file:edited", onEdited);
+		};
+	}, [activeFileId, sessionId, connectionStatus]); // eslint-disable-line react-hooks/exhaustive-deps
+
 	// File content sync:
 	//   - First delivery (loadedFileIdRef ≠ activeFileId): initialise the slot in fileContents
 	//     ONLY if it doesn't already hold local edits (checked via fileContentsRef).
 	//   - Subsequent changes while the same file is active = remote edit from another user.
+	//   NOTE: After this change, the useEffect for remote edits above handles live deltas.
+	//         This effect only seeds the initial content and no longer applies deltas.
 	useEffect(() => {
 		if (
 			!fileData ||
@@ -153,22 +392,16 @@ export function SessionRoomPage() {
 		)
 			return;
 
+		// Only seed from socket on first open. Live deltas are now handled
+		// by the direct file:edited socket listener that calls applyDeltaToModel().
 		if (loadedFileIdRef.current !== activeFileId) {
 			loadedFileIdRef.current = activeFileId;
-			// Only seed from socket if we have no local content for this file yet
 			if (!(activeFileId in fileContentsRef.current)) {
 				setFileContents((prev) => ({
 					...prev,
 					[activeFileId]: fileData.content,
 				}));
 			}
-		} else {
-			// Remote edit — update our local slot and flag to skip re-broadcast
-			isRemoteEditRef.current = true;
-			setFileContents((prev) => ({
-				...prev,
-				[activeFileId]: fileData.content,
-			}));
 		}
 	}, [fileData?.fileId, fileData?.content, activeFileId]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -265,7 +498,8 @@ export function SessionRoomPage() {
 		}
 	}, [fileData?.lastSavedAt]); // eslint-disable-line react-hooks/exhaustive-deps
 
-	// Monaco mount handler — registers Ctrl+S once and wires cursor/selection events
+	// Monaco mount handler — registers Ctrl+S, cursor/selection events,
+	// AND the onDidChangeModelContent listener that captures edit deltas.
 	const handleEditorMount = useCallback<OnMount>(
 		(editor, monaco) => {
 			// Store instances for the decoration effect
@@ -275,6 +509,54 @@ export function SessionRoomPage() {
 			// Ctrl+S — delegates to ref so it's never stale
 			editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyS, () =>
 				handleSaveRef.current()
+			);
+
+			// ── Content change listener ─────────────────────────
+			// This is the primary mechanism for capturing edit deltas.
+			// We use onDidChangeModelContent (on the editor instance) instead
+			// of the <Editor onChange> prop so we get access to the structured
+			// `changes[]` array with exact ranges and text for every atomic
+			// edit — insertions, deletions, replacements, pastes, etc.
+			if (contentChangeDisposableRef.current) {
+				contentChangeDisposableRef.current.dispose();
+			}
+			contentChangeDisposableRef.current = editor.onDidChangeModelContent(
+				(ev) => {
+					// Skip remote edits — they were applied by applyDeltaToModel()
+					// and must not be re-broadcast back through the socket.
+					if (isRemoteEditRef.current) return;
+
+					// Map Monaco's 1-based IModelContentChange[] → our 0-based EditorChanges[]
+					for (const change of ev.changes) {
+						const mapped: EditorChanges = {
+							from: {
+								line: change.range.startLineNumber - 1,
+								ch: change.range.startColumn - 1,
+							},
+							to: {
+								line: change.range.endLineNumber - 1,
+								ch: change.range.endColumn - 1,
+							},
+							text: change.text.split("\n"),
+						};
+						pendingChangesRef.current.push(mapped);
+					}
+
+					// Debounce + max-wait flush scheduling
+					if (!batchStartRef.current)
+						batchStartRef.current = Date.now();
+					if (editDebounceRef.current)
+						clearTimeout(editDebounceRef.current);
+
+					if (Date.now() - batchStartRef.current >= MAX_WAIT_MS) {
+						flushChanges();
+					} else {
+						editDebounceRef.current = setTimeout(
+							flushChanges,
+							DEBOUNCE_MS
+						);
+					}
+				}
 			);
 
 			// Cursor position — debounced 80 ms to avoid flooding
@@ -376,11 +658,9 @@ export function SessionRoomPage() {
 		}
 	}
 
-	function handleContentChange(
-		value: string | undefined,
-		ev: MonacoType.editor.IModelContentChangedEvent
-	) {
-		// If this change was triggered by applying a remote edit, don't re-emit it.
+	// Local-state-only handler — socket emission is handled by the
+	// onDidChangeModelContent listener registered in handleEditorMount.
+	function handleContentChange(value: string | undefined) {
 		if (isRemoteEditRef.current) {
 			isRemoteEditRef.current = false;
 			return;
@@ -393,31 +673,6 @@ export function SessionRoomPage() {
 			}));
 			setDirtyFiles((prev) => new Set(prev).add(activeFileId));
 		}
-
-		// Emit debounced edit deltas via socket
-		if (!sessionId || !activeFileId) return;
-
-		if (editDebounceRef.current) clearTimeout(editDebounceRef.current);
-		editDebounceRef.current = setTimeout(() => {
-			for (const change of ev.changes) {
-				const editorChange: EditorChanges = {
-					from: {
-						line: change.range.startLineNumber - 1, // Monaco is 1-based, backend expects 0-based
-						ch: change.range.startColumn - 1,
-					},
-					to: {
-						line: change.range.endLineNumber - 1,
-						ch: change.range.endColumn - 1,
-					},
-					text: change.text.split("\n"),
-				};
-				void editFile({
-					sessionId,
-					fileId: activeFileId,
-					changes: editorChange,
-				});
-			}
-		}, 200);
 	}
 
 	function handleSave() {

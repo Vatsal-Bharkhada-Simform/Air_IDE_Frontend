@@ -1,11 +1,9 @@
 import { rootApi } from "./api";
 import { connectSocket, getSocket } from "../socketManager";
-import { applyEditorChanges } from "../../utils/applyEditorChanges";
 import type {
 	CursorMovedEvent,
 	CursorSelectedEvent,
 	EditFileArgs,
-	FileEditedEvent,
 	FileSavedEvent,
 	JoinSessionArgs,
 	JoinSessionResult,
@@ -220,15 +218,11 @@ export const collabApi = rootApi.injectEndpoints({
 					});
 				};
 
-				const onEdited = (event: FileEditedEvent) => {
-					if (event.fileId !== fileId) return;
-					updateCachedData((draft) => {
-						draft.content = applyEditorChanges(
-							draft.content,
-							event.changes
-						);
-					});
-				};
+				// file:edited is intentionally NOT handled here.
+				// Remote deltas are applied directly to the Monaco model in
+				// SessionRoomPage via applyDeltaToModel(), which preserves the
+				// undo stack and avoids a full model reset that setting the
+				// `value` prop would cause.
 
 				const onSaved = (event: FileSavedEvent) => {
 					if (event.fileId !== fileId) return;
@@ -239,7 +233,6 @@ export const collabApi = rootApi.injectEndpoints({
 				};
 
 				socket.on("file:content", onContent);
-				socket.on("file:edited", onEdited);
 				socket.on("file:saved", onSaved);
 
 				socket.emit("file:open", { sessionId, fileId });
@@ -247,7 +240,6 @@ export const collabApi = rootApi.injectEndpoints({
 				await cacheEntryRemoved;
 
 				socket.off("file:content", onContent);
-				socket.off("file:edited", onEdited);
 				socket.off("file:saved", onSaved);
 			},
 		}),
@@ -255,7 +247,7 @@ export const collabApi = rootApi.injectEndpoints({
 		// Broadcasts a local text change to collaborators without persisting it
 		editFile: builder.mutation<null, EditFileArgs>({
 			queryFn: ({ sessionId, fileId, changes }) => {
-				getSocket().emit("file:edit", { sessionId, fileId, changes });
+				getSocket()?.emit("file:edit", { sessionId, fileId, changes });
 				return { data: null };
 			},
 		}),
@@ -263,7 +255,7 @@ export const collabApi = rootApi.injectEndpoints({
 		// Persists file content to the database and notifies all collaborators
 		saveFile: builder.mutation<null, SaveFileArgs>({
 			queryFn: ({ sessionId, fileId, content }) => {
-				getSocket().emit("file:save", { sessionId, fileId, content });
+				getSocket()?.emit("file:save", { sessionId, fileId, content });
 				return { data: null };
 			},
 		}),
@@ -271,7 +263,7 @@ export const collabApi = rootApi.injectEndpoints({
 		// Broadcasts the local user's cursor position to collaborators
 		moveCursor: builder.mutation<null, MoveCursorArgs>({
 			queryFn: ({ sessionId, fileId, line, column }) => {
-				getSocket().emit("cursor:move", {
+				getSocket()?.emit("cursor:move", {
 					sessionId,
 					fileId,
 					line,
@@ -284,7 +276,7 @@ export const collabApi = rootApi.injectEndpoints({
 		// Broadcasts the local user's text selection to collaborators
 		selectText: builder.mutation<null, SelectTextArgs>({
 			queryFn: ({ sessionId, fileId, selection }) => {
-				getSocket().emit("cursor:select", {
+				getSocket()?.emit("cursor:select", {
 					sessionId,
 					fileId,
 					selection,

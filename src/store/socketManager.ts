@@ -33,11 +33,12 @@ export function connectSocket(token: string): Socket {
 	return socketInstance;
 }
 
-export function getSocket(): Socket {
-	if (!socketInstance) {
-		throw new Error("Socket connection has not been established yet.");
-	}
-
+/**
+ * Returns the active socket instance, or null if not yet established.
+ * Use this in places that can safely handle the absence of a connection
+ * (e.g. useEffect hooks that run before the socket is ready).
+ */
+export function getSocket(): Socket | null {
 	return socketInstance;
 }
 

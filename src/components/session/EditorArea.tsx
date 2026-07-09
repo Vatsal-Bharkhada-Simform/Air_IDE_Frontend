@@ -1,5 +1,4 @@
 import Editor, { type OnMount } from "@monaco-editor/react";
-import type * as MonacoType from "monaco-editor";
 import { Clock, FilePlus, FileCode, Save } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
@@ -48,10 +47,7 @@ export interface EditorAreaProps {
 	onTabClick: (file: SessionFile) => void;
 	onTabClose: (fileId: string) => void;
 	onNewFileClick: () => void;
-	onContentChange: (
-		value: string | undefined,
-		ev: MonacoType.editor.IModelContentChangedEvent
-	) => void;
+	onContentChange: (value: string | undefined) => void;
 	onSave: () => void;
 	onEditorMount: OnMount;
 	lastSavedBy: string | null;

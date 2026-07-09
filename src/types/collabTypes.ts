@@ -75,9 +75,10 @@ export interface EditorChanges {
 
 export interface FileEditedEvent {
 	fileId: string;
-	changes: EditorChanges;
+	changes: EditorChanges[]; // array — all deltas from one debounced batch
 	userId: string;
 	username: string;
+	seq: number; // monotonic per-file counter stamped by the backend
 }
 
 export interface FileSavedEvent {
@@ -89,7 +90,7 @@ export interface FileSavedEvent {
 export interface EditFileArgs {
 	sessionId: string;
 	fileId: string;
-	changes: EditorChanges;
+	changes: EditorChanges[]; // full batch of deltas, sent in one socket emission
 }
 
 export interface SaveFileArgs {
