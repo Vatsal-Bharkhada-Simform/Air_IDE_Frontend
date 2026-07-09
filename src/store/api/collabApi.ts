@@ -202,6 +202,7 @@ export const collabApi = rootApi.injectEndpoints({
 				}
 
 				const socket = getSocket();
+				if (!socket) return;
 
 				const onContent = (payload: {
 					fileId: string;

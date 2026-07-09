@@ -1,7 +1,6 @@
 import { ArrowLeft, Zap } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { Separator as SeparatorUI } from "@/components/ui/separator";
 import {
 	Tooltip,
 	TooltipContent,
