@@ -248,7 +248,7 @@ export const collabApi = rootApi.injectEndpoints({
 		// Broadcasts a local text change to collaborators without persisting it
 		editFile: builder.mutation<null, EditFileArgs>({
 			queryFn: ({ sessionId, fileId, changes }) => {
-				getSocket()?.emit("file:edit", { sessionId, fileId, changes });
+				getSocket()?.emit("update", { sessionId, fileId, changes });
 				return { data: null };
 			},
 		}),

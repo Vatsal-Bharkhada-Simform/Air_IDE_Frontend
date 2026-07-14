@@ -2,12 +2,12 @@ import { useState, useRef, useEffect, useCallback } from "react";
 import { Navigate, useNavigate, useParams } from "react-router";
 import type { OnMount } from "@monaco-editor/react";
 import type * as MonacoType from "monaco-editor";
+import * as Y from "yjs";
+import { MonacoBinding } from "y-monaco";
 
 import {
-	collabApi,
 	useJoinSessionQuery,
 	useOpenFileQuery,
-	useEditFileMutation,
 	useMoveCursorMutation,
 	useSelectTextMutation,
 	useSaveFileMutation,
@@ -17,19 +17,13 @@ import {
 	useListFilesQuery,
 	useCreateFileMutation,
 } from "@/store/api/api";
-import type {
-	EditorChanges,
-	FileEditedEvent,
-	TextSelection,
-} from "@/types/collabTypes";
-import { useRootSelector, useRootDispatch } from "@/store/store";
+import { useRootSelector } from "@/store/store";
 import type {
 	SessionFile,
 	SessionUser,
 	SocketConnectionStatus,
 } from "@/types/collabTypes";
 import { getSocket } from "@/store/socketManager";
-import { applyDeltaToModel } from "@/utils/applyEditorChanges";
 
 // Sub-components
 import { SessionHeader } from "@/components/session/SessionHeader";
@@ -45,77 +39,11 @@ import { langFromFilename } from "@/components/session/helpers";
 
 /* ─── Session Room Page ───────────────────────────────────── */
 
-/* ─── Pure helpers (outside component, no hooks) ─────────────── */
-
-/**
- * Given a file:edit delta, shift every remote user's cursor / selection
- * that falls on or below the affected line range.
- *
- * @param users    - Current array of remote SessionUsers
- * @param changes  - The EditorChanges delta that was just applied
- * @returns        - New users array with corrected cursor / selection positions
- */
-function shiftCursorsForEdit(
-	users: SessionUser[],
-	changes: EditorChanges
-): SessionUser[] {
-	const { from, to, text } = changes;
-	const linesRemoved = to.line - from.line; // how many lines the range spans
-	const linesAdded = text.length - 1; // how many newlines the replacement has
-	const lineDelta = linesAdded - linesRemoved;
-
-	// Same-line replacement — no line count change, cursor positions unaffected
-	if (lineDelta === 0) return users;
-
-	return users.map((u) => {
-		const cursor = u.cursor;
-		if (!cursor || cursor.line <= from.line + 1) {
-			// Cursor is on or before the first affected line — no shift
-			return u;
-		}
-
-		const shiftedLine = Math.max(from.line + 1, cursor.line + lineDelta);
-
-		const shiftedSelection = u.selection
-			? shiftSelection(u.selection, from.line, lineDelta)
-			: null;
-
-		return {
-			...u,
-			cursor: { ...cursor, line: shiftedLine },
-			selection: shiftedSelection,
-		};
-	});
-}
-
-/**
- * Shift a TextSelection by `lineDelta` for lines that fall after `fromLine`.
- */
-function shiftSelection(
-	sel: TextSelection,
-	fromLine: number,
-	lineDelta: number
-): TextSelection {
-	return {
-		startLine:
-			sel.startLine > fromLine + 1
-				? Math.max(fromLine + 1, sel.startLine + lineDelta)
-				: sel.startLine,
-		startColumn: sel.startColumn,
-		endLine:
-			sel.endLine > fromLine + 1
-				? Math.max(fromLine + 1, sel.endLine + lineDelta)
-				: sel.endLine,
-		endColumn: sel.endColumn,
-	};
-}
-
-/* ─── Session Room Page ───────────────────────────────────── */
+const EMPTY_USERS: SessionUser[] = [];
 
 export function SessionRoomPage() {
 	const { roomId } = useParams<{ roomId: string }>();
 	const navigate = useNavigate();
-	const dispatch = useRootDispatch();
 
 	// ── Auth & user ──────────────────────────────────────────
 	const token = useRootSelector((state) => state.auth.token);
@@ -123,7 +51,6 @@ export function SessionRoomPage() {
 	const username = userData?.data.user.username ?? "";
 
 	// ── Socket / session join ────────────────────────────────
-	// Skip the query entirely if we don't have both pieces yet.
 	const skipJoin = !roomId || !token;
 	const { data: sessionState } = useJoinSessionQuery(
 		{ inviteCode: roomId ?? "", token: token ?? "" },
@@ -133,7 +60,7 @@ export function SessionRoomPage() {
 	const connectionStatus: SocketConnectionStatus =
 		sessionState?.connectionStatus ?? (skipJoin ? "idle" : "connecting");
 	const sessionName = sessionState?.session?.name ?? "";
-	const users: SessionUser[] = sessionState?.users ?? [];
+	const users: SessionUser[] = sessionState?.users ?? EMPTY_USERS;
 	const socketError = sessionState?.error ?? null;
 
 	// ── Local UI state ───────────────────────────────────────
@@ -141,271 +68,186 @@ export function SessionRoomPage() {
 	const [openTabs, setOpenTabs] = useState<SessionFile[]>([]);
 	const [activeFileId, setActiveFileId] = useState<string | null>(null);
 	const [dirtyFiles, setDirtyFiles] = useState<Set<string>>(new Set());
-	// Per-file content map: preserves each file's content across tab switches
-	const [fileContents, setFileContents] = useState<Record<string, string>>(
-		{}
-	);
 	const [newFileOpen, setNewFileOpen] = useState(false);
 
-	// Derived — the Monaco editor always reads from the active file's slot
-	const editorContent =
-		activeFileId !== null ? (fileContents[activeFileId] ?? "") : "";
-
-	// ── File management (Iteration 2) ─────────────────────────
+	// ── File management ───────────────────────────────────────
 	const sessionId = sessionState?.session?.id;
 
-	// REST file list — refreshed manually after creating a file
 	const { data: filesData, refetch: refetchFiles } = useListFilesQuery(
 		sessionId ?? "",
 		{ skip: !sessionId }
 	);
 	const files = filesData?.data.files ?? sessionState?.session?.files ?? [];
 
-	// Socket-based file content for the currently active file
+	// Fetch initial DB state via REST/Socket wrapper
 	const { data: fileData } = useOpenFileQuery(
 		{ sessionId: sessionId ?? "", fileId: activeFileId ?? "" },
 		{ skip: !sessionId || !activeFileId }
 	);
 
-	// REST create-file mutation
 	const [createFile, { isLoading: isCreatingFile }] = useCreateFileMutation();
-
-	// Track which file's content we've already loaded to avoid
-	// overwriting local edits if the socket re-delivers the same file.
 	const loadedFileIdRef = useRef<string | null>(null);
 
-	// Derived from query result
 	const lastSavedBy = fileData?.lastSavedBy ?? null;
 	const lastSavedAt = fileData?.lastSavedAt ?? null;
 
-	// ── Editing, saving, and cursor mutations ────────────────
-	const [editFile] = useEditFileMutation();
-	const [saveFile] = useSaveFileMutation();
-	const [moveCursor] = useMoveCursorMutation();
-	const [selectText] = useSelectTextMutation();
-
-	// Debounce timer for socket edits
-	const editDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-	// Suppress re-broadcasting remote edits back to the socket
-	const isRemoteEditRef = useRef(false);
-	// Ref mirror of fileContents — readable inside useEffect without making it a dep
-	const fileContentsRef = useRef<Record<string, string>>({});
-	fileContentsRef.current = fileContents;
-	// Always-current ref to editorContent to avoid stale closure in Ctrl+S
-	const editorContentRef = useRef(editorContent);
-	editorContentRef.current = editorContent;
-
-	// Ref that always points to the latest handleSave — lets handleEditorMount
-	// register the keybinding once (empty deps) without ever going stale.
-	const handleSaveRef = useRef<() => void>(() => {});
-	// Mutation refs — stable handles for use inside Monaco's event listeners
-	const moveCursorRef = useRef(moveCursor);
-	moveCursorRef.current = moveCursor;
-	const selectTextRef = useRef(selectText);
-	selectTextRef.current = selectText;
-	// Persisted editor + monaco instances for the decoration effect
+	// ── Yjs State ────────────────────────────────────────────
+	const yDocsRef = useRef<Record<string, Y.Doc>>({});
+	const yBindingsRef = useRef<Record<string, MonacoBinding>>({});
 	const editorRef = useRef<MonacoType.editor.IStandaloneCodeEditor | null>(
 		null
 	);
 	const monacoRef = useRef<typeof MonacoType | null>(null);
-	// Current decoration IDs so we can replace them on every update
 	const decorationIdsRef = useRef<string[]>([]);
-	// Always-current sessionId and activeFileId for use inside Monaco listeners
 	const sessionIdRef = useRef(sessionId);
-	sessionIdRef.current = sessionId;
 	const activeFileIdRef = useRef(activeFileId);
-	activeFileIdRef.current = activeFileId;
 
-	const pendingChangesRef = useRef<EditorChanges[]>([]);
+	// ── Mutations ────────────────────────────────────────────
+	const [saveFile] = useSaveFileMutation();
+	const [moveCursor] = useMoveCursorMutation();
+	const [selectText] = useSelectTextMutation();
 
-	// Per-file last-received sequence number — used to detect & discard
-	// duplicate or out-of-order deltas from the backend.
-	const lastSeqRef = useRef<Record<string, number>>({});
+	const moveCursorRef = useRef(moveCursor);
+	const selectTextRef = useRef(selectText);
+	const handleSaveRef = useRef<() => void>(() => {});
 
-	const MAX_WAIT_MS = 500;
-	const DEBOUNCE_MS = 150;
-	const batchStartRef = useRef<number | null>(null);
-	// Disposable for the onDidChangeModelContent listener — cleaned up on re-mount
-	const contentChangeDisposableRef = useRef<MonacoType.IDisposable | null>(
-		null
-	);
+	useEffect(() => {
+		sessionIdRef.current = sessionId;
+		activeFileIdRef.current = activeFileId;
+		moveCursorRef.current = moveCursor;
+		selectTextRef.current = selectText;
+		handleSaveRef.current = handleSave;
+	});
 
-	/**
-	 * Coalesce an array of granular EditorChanges into fewer, larger deltas
-	 * to reduce socket payload size.  Handles:
-	 *  1. Consecutive single-char INSERTS on the same line → merge text
-	 *  2. Consecutive single-char BACKSPACES on the same line → widen range
-	 *  3. Everything else → pass through as-is
-	 */
-	function coalesceChanges(changes: EditorChanges[]): EditorChanges[] {
-		const merged: EditorChanges[] = [];
-		for (const change of changes) {
-			const last = merged[merged.length - 1];
+	// ── Yjs & Monaco Binding Logic ────────────────────────────
 
-			// ── Detect change types ──────────────────────────
-			const isInsert =
-				change.from.line === change.to.line &&
-				change.from.ch === change.to.ch &&
-				change.text.length === 1 &&
-				change.text[0].length === 1;
+	const bindYjsToMonaco = useCallback((fileId: string) => {
+		const editor = editorRef.current;
+		const doc = yDocsRef.current[fileId];
+		if (!editor || !doc) return;
 
-			const isBackspace =
-				change.text.length === 1 &&
-				change.text[0] === "" &&
-				change.from.line === change.to.line &&
-				change.to.ch - change.from.ch === 1;
-
-			// ── Try to merge with the previous change ─────────
-			if (last) {
-				const lastIsInsert =
-					last.from.line === last.to.line &&
-					last.from.ch === last.to.ch &&
-					last.text.length === 1;
-
-				const lastIsBackspace =
-					last.text.length === 1 && last.text[0] === "";
-
-				// Merge consecutive single-char inserts on the same line
-				if (
-					isInsert &&
-					lastIsInsert &&
-					change.from.line === last.from.line &&
-					change.from.ch === last.from.ch + last.text[0].length
-				) {
-					last.text[0] += change.text[0];
-					continue;
-				}
-
-				// Merge consecutive single-char backspaces on the same line
-				// Backspace moves the cursor left, so the new `from` sits
-				// one char before the previous `from`.
-				if (
-					isBackspace &&
-					lastIsBackspace &&
-					change.from.line === last.from.line &&
-					change.to.ch === last.from.ch
-				) {
-					last.from = { ...change.from };
-					continue;
-				}
-			}
-
-			// No merge possible — push as a new entry
-			merged.push({
-				from: { ...change.from },
-				to: { ...change.to },
-				text: [...change.text],
-			});
+		// Clean up old binding
+		if (yBindingsRef.current[fileId]) {
+			yBindingsRef.current[fileId].destroy();
 		}
 
-		return merged;
-	}
+		// Since we use the `path` prop in <Editor>, Monaco automatically
+		// swaps the ITextModel. We get the current one.
+		const model = editor.getModel();
+		if (!model) return;
 
-	function flushChanges() {
-		if (editDebounceRef.current) clearTimeout(editDebounceRef.current);
-		editDebounceRef.current = null;
-		batchStartRef.current = null;
+		const ytext = doc.getText("content");
+		yBindingsRef.current[fileId] = new MonacoBinding(
+			ytext,
+			model,
+			new Set([editor]),
+			null // we can add awareness here later
+		);
+	}, []);
 
-		const batch = coalesceChanges(pendingChangesRef.current);
-		pendingChangesRef.current = [];
-
-		const sid = sessionIdRef.current;
-		const fid = activeFileIdRef.current;
-		if (batch.length === 0 || !sid || !fid) return;
-		void editFile({ sessionId: sid, fileId: fid, changes: batch });
-	}
-
-	// ── Remote edit listener ─────────────────────────────────
-	// Listens for file:edited directly on the socket (NOT through RTK cache)
-	// so we can apply deltas via editor.executeEdits(), which is incremental
-	// and preserves the undo stack and cursor — unlike setting the value prop.
+	// Handle initial file content delivery
 	useEffect(() => {
-		const socket = getSocket(); // null until connectSocket() is called by useJoinSessionQuery
-		if (!socket || !activeFileId || !sessionId) return;
+		if (!fileData || fileData.fileId !== activeFileId || !sessionId) return;
 
-		const onEdited = (event: FileEditedEvent) => {
-			if (event.fileId !== activeFileId) return;
-
-			// ── Sequence-number guard ──────────────────────────
-			// Discard deltas that are older than what we've already applied.
-			// Socket.IO guarantees FIFO per connection so this is mainly a
-			// safety net for reconnect replays or batching edge-cases.
-			const lastSeq = lastSeqRef.current[activeFileId] ?? 0;
-			if (event.seq <= lastSeq) return;
-			lastSeqRef.current[activeFileId] = event.seq;
-
-			const editor = editorRef.current;
-			if (!editor) return;
-
-			const model = editor.getModel();
-			if (!model) return;
-
-			// ── Apply delta directly to Monaco model ───────────
-			// Mark as remote so handleContentChange won't re-broadcast it.
-			isRemoteEditRef.current = true;
-			applyDeltaToModel(model, event.changes);
-
-			// ── Sync fileContents mirror ───────────────────────
-			// Keep our per-file content map in sync so tab-switch restores
-			// and Ctrl+S always have the latest content.
-			const updatedContent = model.getValue();
-			setFileContents((prev) => ({
-				...prev,
-				[activeFileId]: updatedContent,
-			}));
-
-			// ── Shift remote cursors for line-count changes ────
-			// Apply the shift for each delta in the batch sequentially.
-			dispatch(
-				collabApi.util.updateQueryData(
-					"joinSession",
-					{ inviteCode: roomId ?? "", token: token ?? "" },
-					(draft) => {
-						for (const change of event.changes) {
-							draft.users = shiftCursorsForEdit(
-								draft.users,
-								change
-							);
-						}
-					}
-				)
-			);
-		};
-
-		socket.on("file:edited", onEdited);
-		return () => {
-			socket.off("file:edited", onEdited);
-		};
-	}, [activeFileId, sessionId, connectionStatus]); // eslint-disable-line react-hooks/exhaustive-deps
-
-	// File content sync:
-	//   - First delivery (loadedFileIdRef ≠ activeFileId): initialise the slot in fileContents
-	//     ONLY if it doesn't already hold local edits (checked via fileContentsRef).
-	//   - Subsequent changes while the same file is active = remote edit from another user.
-	//   NOTE: After this change, the useEffect for remote edits above handles live deltas.
-	//         This effect only seeds the initial content and no longer applies deltas.
-	useEffect(() => {
-		if (
-			!fileData ||
-			fileData.fileId !== activeFileId ||
-			fileData.content === undefined
-		)
-			return;
-
-		// Only seed from socket on first open. Live deltas are now handled
-		// by the direct file:edited socket listener that calls applyDeltaToModel().
 		if (loadedFileIdRef.current !== activeFileId) {
 			loadedFileIdRef.current = activeFileId;
-			if (!(activeFileId in fileContentsRef.current)) {
-				setFileContents((prev) => ({
-					...prev,
-					[activeFileId]: fileData.content,
-				}));
+
+			if (!yDocsRef.current[activeFileId]) {
+				const doc = new Y.Doc();
+				yDocsRef.current[activeFileId] = doc;
+
+				// Listen for local updates to broadcast
+				doc.on("update", (update: Uint8Array, origin: unknown) => {
+					// MonacoBinding sets origin to itself when it creates an update.
+					// If the origin is 'remote', we applied it from the socket, so don't re-broadcast.
+					if (origin !== "remote") {
+						getSocket()?.emit("update", {
+							sessionId,
+							fileId: activeFileId,
+							update: Array.from(update),
+						});
+					}
+
+					// Mark dirty if it's a local edit
+					if (origin !== "remote") {
+						setDirtyFiles((prev) =>
+							new Set(prev).add(activeFileId)
+						);
+					}
+				});
+			}
+
+			// If the editor is mounted, bind it immediately
+			if (editorRef.current) {
+				bindYjsToMonaco(activeFileId);
+			}
+
+			// Send sync-request to get missed changes
+			const doc = yDocsRef.current[activeFileId];
+			if (doc && getSocket()?.connected) {
+				getSocket()?.emit("sync-request", {
+					sessionId,
+					fileId: activeFileId,
+					stateVector: Array.from(Y.encodeStateVector(doc)),
+				});
 			}
 		}
-	}, [fileData?.fileId, fileData?.content, activeFileId]); // eslint-disable-line react-hooks/exhaustive-deps
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [
+		fileData?.fileId,
+		fileData?.content,
+		activeFileId,
+		sessionId,
+		bindYjsToMonaco,
+	]);
 
-	// Re-apply remote cursor/selection decorations whenever users or active file changes
+	// Socket listeners for Yjs updates
+	useEffect(() => {
+		const socket = getSocket();
+		if (!socket || !sessionId) return;
+
+		const onUpdate = (event: { fileId: string; update: number[] }) => {
+			const doc = yDocsRef.current[event.fileId];
+			if (doc) {
+				Y.applyUpdate(doc, new Uint8Array(event.update), "remote");
+			}
+		};
+
+		const onSyncResponse = (event: {
+			fileId: string;
+			update: number[];
+		}) => {
+			const doc = yDocsRef.current[event.fileId];
+			if (doc) {
+				Y.applyUpdate(doc, new Uint8Array(event.update), "remote");
+			}
+		};
+
+		const onConnect = () => {
+			if (activeFileIdRef.current) {
+				const doc = yDocsRef.current[activeFileIdRef.current];
+				if (doc) {
+					socket.emit("sync-request", {
+						sessionId: sessionIdRef.current,
+						fileId: activeFileIdRef.current,
+						stateVector: Array.from(Y.encodeStateVector(doc)),
+					});
+				}
+			}
+		};
+
+		socket.on("update", onUpdate);
+		socket.on("sync-response", onSyncResponse);
+		socket.on("connect", onConnect);
+
+		return () => {
+			socket.off("update", onUpdate);
+			socket.off("sync-response", onSyncResponse);
+			socket.off("connect", onConnect);
+		};
+	}, [sessionId]); // removed activeFileId so it listens for all open tabs
+
+	// Cursor decorators
 	useEffect(() => {
 		const editor = editorRef.current;
 		const monaco = monacoRef.current;
@@ -424,7 +266,6 @@ export function SessionRoomPage() {
 			const cursorClass = `remote-cursor-${uid}`;
 			const labelClass = `remote-cursor-label-${uid}`;
 
-			// Inject per-user cursor CSS once
 			const styleId = `cursor-style-${user.userId}`;
 			if (!document.getElementById(styleId)) {
 				const style = document.createElement("style");
@@ -438,7 +279,6 @@ export function SessionRoomPage() {
 				document.head.appendChild(style);
 			}
 
-			// Cursor decoration (vertical bar)
 			const line = Math.max(1, user.cursor.line);
 			const col = Math.max(1, user.cursor.column);
 			newDecorations.push({
@@ -452,11 +292,9 @@ export function SessionRoomPage() {
 				},
 			});
 
-			// Selection decoration
 			if (user.selection) {
 				const sel = user.selection;
 				const selClass = `remote-selection-${uid}`;
-
 				const selStyleId = `sel-style-${user.userId}`;
 				if (!document.getElementById(selStyleId)) {
 					const style = document.createElement("style");
@@ -486,80 +324,35 @@ export function SessionRoomPage() {
 			decorationIdsRef.current,
 			newDecorations
 		);
-	}, [users, activeFileId]); // eslint-disable-line react-hooks/exhaustive-deps
+	}, [users, activeFileId]);
 
 	useEffect(() => {
 		if (fileData?.lastSavedAt && activeFileId) {
+			// eslint-disable-next-line
 			setDirtyFiles((prev) => {
 				const next = new Set(prev);
 				next.delete(activeFileId);
 				return next;
 			});
 		}
-	}, [fileData?.lastSavedAt]); // eslint-disable-line react-hooks/exhaustive-deps
+	}, [fileData, activeFileId]);
 
-	// Monaco mount handler — registers Ctrl+S, cursor/selection events,
-	// AND the onDidChangeModelContent listener that captures edit deltas.
 	const handleEditorMount = useCallback<OnMount>(
 		(editor, monaco) => {
-			// Store instances for the decoration effect
 			editorRef.current = editor;
 			monacoRef.current = monaco as unknown as typeof MonacoType;
 
-			// Ctrl+S — delegates to ref so it's never stale
 			editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyS, () =>
 				handleSaveRef.current()
 			);
 
-			// ── Content change listener ─────────────────────────
-			// This is the primary mechanism for capturing edit deltas.
-			// We use onDidChangeModelContent (on the editor instance) instead
-			// of the <Editor onChange> prop so we get access to the structured
-			// `changes[]` array with exact ranges and text for every atomic
-			// edit — insertions, deletions, replacements, pastes, etc.
-			if (contentChangeDisposableRef.current) {
-				contentChangeDisposableRef.current.dispose();
+			if (
+				activeFileIdRef.current &&
+				yDocsRef.current[activeFileIdRef.current]
+			) {
+				bindYjsToMonaco(activeFileIdRef.current);
 			}
-			contentChangeDisposableRef.current = editor.onDidChangeModelContent(
-				(ev) => {
-					// Skip remote edits — they were applied by applyDeltaToModel()
-					// and must not be re-broadcast back through the socket.
-					if (isRemoteEditRef.current) return;
 
-					// Map Monaco's 1-based IModelContentChange[] → our 0-based EditorChanges[]
-					for (const change of ev.changes) {
-						const mapped: EditorChanges = {
-							from: {
-								line: change.range.startLineNumber - 1,
-								ch: change.range.startColumn - 1,
-							},
-							to: {
-								line: change.range.endLineNumber - 1,
-								ch: change.range.endColumn - 1,
-							},
-							text: change.text.split("\n"),
-						};
-						pendingChangesRef.current.push(mapped);
-					}
-
-					// Debounce + max-wait flush scheduling
-					if (!batchStartRef.current)
-						batchStartRef.current = Date.now();
-					if (editDebounceRef.current)
-						clearTimeout(editDebounceRef.current);
-
-					if (Date.now() - batchStartRef.current >= MAX_WAIT_MS) {
-						flushChanges();
-					} else {
-						editDebounceRef.current = setTimeout(
-							flushChanges,
-							DEBOUNCE_MS
-						);
-					}
-				}
-			);
-
-			// Cursor position — debounced 80 ms to avoid flooding
 			let cursorTimer: ReturnType<typeof setTimeout> | null = null;
 			editor.onDidChangeCursorPosition((e) => {
 				if (cursorTimer) clearTimeout(cursorTimer);
@@ -576,7 +369,6 @@ export function SessionRoomPage() {
 				}, 80);
 			});
 
-			// Selection — debounced 80 ms
 			let selTimer: ReturnType<typeof setTimeout> | null = null;
 			editor.onDidChangeCursorSelection((e) => {
 				if (selTimer) clearTimeout(selTimer);
@@ -585,7 +377,7 @@ export function SessionRoomPage() {
 					const fid = activeFileIdRef.current;
 					if (!sid || !fid) return;
 					const sel = e.selection;
-					if (sel.isEmpty()) return; // cursor-only move, handled above
+					if (sel.isEmpty()) return;
 					void selectTextRef.current({
 						sessionId: sid,
 						fileId: fid,
@@ -599,13 +391,10 @@ export function SessionRoomPage() {
 				}, 80);
 			});
 		},
-		[] // stable — keybinding + listeners registered once; refs handle updates
+		[bindYjsToMonaco]
 	);
 
-	// ── Full-page gate: ALL hooks above, early returns below ───────
 	if (!token) {
-		console.log("Returning");
-
 		return <Navigate to="/auth/login" replace />;
 	}
 
@@ -627,9 +416,13 @@ export function SessionRoomPage() {
 
 	function openFile(file: SessionFile) {
 		if (file.id !== activeFileId) {
-			// Reset the loaded marker so the socket re-delivers if the cache expired.
-			// Do NOT clear the editor — fileContents[file.id] already has any local edits.
-			loadedFileIdRef.current = null;
+			// Trigger re-bind if doc already exists
+			if (yDocsRef.current[file.id] && editorRef.current) {
+				// Delay binding until next frame to allow Editor's `path` prop to swap the model first
+				setTimeout(() => {
+					bindYjsToMonaco(file.id);
+				}, 0);
+			}
 		}
 		setActiveFileId(file.id);
 		if (!openTabs.some((t) => t.id === file.id)) {
@@ -644,48 +437,37 @@ export function SessionRoomPage() {
 			next.delete(fileId);
 			return next;
 		});
-		// Free the content slot for this tab
-		setFileContents((prev) => {
-			const next = { ...prev };
-			delete next[fileId];
-			return next;
-		});
+
+		if (yBindingsRef.current[fileId]) {
+			yBindingsRef.current[fileId].destroy();
+			delete yBindingsRef.current[fileId];
+		}
+		if (yDocsRef.current[fileId]) {
+			yDocsRef.current[fileId].destroy();
+			delete yDocsRef.current[fileId];
+		}
+
 		if (activeFileId === fileId) {
 			const remaining = openTabs.filter((t) => t.id !== fileId);
 			const next = remaining[remaining.length - 1] ?? null;
 			setActiveFileId(next?.id ?? null);
-			// No explicit content clear needed — editorContent derives from fileContents[next?.id]
-		}
-	}
-
-	// Local-state-only handler — socket emission is handled by the
-	// onDidChangeModelContent listener registered in handleEditorMount.
-	function handleContentChange(value: string | undefined) {
-		if (isRemoteEditRef.current) {
-			isRemoteEditRef.current = false;
-			return;
-		}
-
-		if (activeFileId) {
-			setFileContents((prev) => ({
-				...prev,
-				[activeFileId]: value ?? "",
-			}));
-			setDirtyFiles((prev) => new Set(prev).add(activeFileId));
+			if (next?.id) {
+				setTimeout(() => bindYjsToMonaco(next.id), 0);
+			}
 		}
 	}
 
 	function handleSave() {
 		if (!sessionId || !activeFileId) return;
+		const doc = yDocsRef.current[activeFileId];
+		if (!doc) return;
+
 		void saveFile({
 			sessionId,
 			fileId: activeFileId,
-			content: editorContentRef.current, // ref never goes stale
+			content: doc.getText("content").toString(),
 		});
-		// Dirty flag cleared reactively via the fileData.lastSavedAt useEffect
 	}
-	// Keep the ref current so the Monaco Ctrl+S command always calls the latest version
-	handleSaveRef.current = handleSave;
 
 	async function handleNewFile(filename: string): Promise<boolean> {
 		if (!sessionId) return false;
@@ -703,9 +485,24 @@ export function SessionRoomPage() {
 			};
 			setOpenTabs((prev) => [...prev, newFile]);
 			setActiveFileId(newFile.id);
-			// Seed an empty slot so the editor shows blank immediately
-			setFileContents((prev) => ({ ...prev, [newFile.id]: "" }));
-			loadedFileIdRef.current = newFile.id; // mark loaded so socket won't overwrite
+
+			// We don't set loadedFileIdRef here because we want the query to fetch the initial empty state
+			// But since we just created it, we can prepopulate Y.Doc
+			const doc = new Y.Doc();
+			yDocsRef.current[newFile.id] = doc;
+			doc.on("update", (update: Uint8Array, origin: unknown) => {
+				if (origin !== "remote") {
+					getSocket()?.emit("update", {
+						sessionId,
+						fileId: newFile.id,
+						update: Array.from(update),
+					});
+					setDirtyFiles((prev) => new Set(prev).add(newFile.id));
+				}
+			});
+			loadedFileIdRef.current = newFile.id;
+			setTimeout(() => bindYjsToMonaco(newFile.id), 0);
+
 			void refetchFiles();
 			return true;
 		} catch {
@@ -713,11 +510,8 @@ export function SessionRoomPage() {
 		}
 	}
 
-	// ── Render ────────────────────────────────────────────────
-
 	return (
 		<div className="h-screen flex flex-col overflow-hidden bg-background">
-			{/* Header */}
 			<SessionHeader
 				sessionName={sessionName}
 				inviteCode={roomId ?? ""}
@@ -726,9 +520,7 @@ export function SessionRoomPage() {
 				onBack={() => navigate("/")}
 			/>
 
-			{/* Body — sidebar + editor */}
 			<div className="flex flex-1 overflow-hidden">
-				{/* Members sidebar */}
 				<MembersSidebar
 					users={users}
 					activeFileId={activeFileId}
@@ -736,7 +528,6 @@ export function SessionRoomPage() {
 					onToggle={() => setSidebarCollapsed((v) => !v)}
 				/>
 
-				{/* File explorer */}
 				<FilesPanel
 					files={files}
 					activeFileId={activeFileId}
@@ -744,16 +535,13 @@ export function SessionRoomPage() {
 					onFileClick={openFile}
 				/>
 
-				{/* Monaco editor + tab bar */}
 				<EditorArea
 					openTabs={openTabs}
 					activeFileId={activeFileId}
 					dirtyFiles={dirtyFiles}
-					content={editorContent}
 					onTabClick={openFile}
 					onTabClose={closeTab}
 					onNewFileClick={() => setNewFileOpen(true)}
-					onContentChange={handleContentChange}
 					onSave={handleSave}
 					onEditorMount={handleEditorMount}
 					lastSavedBy={lastSavedBy}
@@ -761,7 +549,6 @@ export function SessionRoomPage() {
 				/>
 			</div>
 
-			{/* New file dialog */}
 			<NewFileDialog
 				open={newFileOpen}
 				onClose={() => setNewFileOpen(false)}

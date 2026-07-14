@@ -43,11 +43,9 @@ export interface EditorAreaProps {
 	openTabs: SessionFile[];
 	activeFileId: string | null;
 	dirtyFiles: Set<string>;
-	content: string;
 	onTabClick: (file: SessionFile) => void;
 	onTabClose: (fileId: string) => void;
 	onNewFileClick: () => void;
-	onContentChange: (value: string | undefined) => void;
 	onSave: () => void;
 	onEditorMount: OnMount;
 	lastSavedBy: string | null;
@@ -58,11 +56,9 @@ export function EditorArea({
 	openTabs,
 	activeFileId,
 	dirtyFiles,
-	content,
 	onTabClick,
 	onTabClose,
 	onNewFileClick,
-	onContentChange,
 	onSave,
 	onEditorMount,
 	lastSavedBy,
@@ -117,8 +113,7 @@ export function EditorArea({
 						<Editor
 							height="100%"
 							language={toMonacoLang(activeFile.language)}
-							value={content}
-							onChange={onContentChange}
+							path={activeFile.id}
 							onMount={onEditorMount}
 							theme={editorTheme}
 							options={{
