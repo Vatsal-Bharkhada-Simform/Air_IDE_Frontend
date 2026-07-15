@@ -1,5 +1,13 @@
+import { useState } from "react";
 import { useNavigate } from "react-router";
-import { FileCode2, Users, Calendar, Plus } from "lucide-react";
+import {
+	FileCode2,
+	Users,
+	Calendar,
+	Plus,
+	ChevronDown,
+	ChevronRight,
+} from "lucide-react";
 import type { SessionDataWithCounts } from "@/types/collabTypes";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -13,6 +21,7 @@ import {
 } from "@/components/ui/table";
 import { InviteCodeCell } from "./InviteCodeCell";
 import { SessionRowActions } from "./SessionRowActions";
+import { SessionFilesDrawer } from "./SessionFilesDrawer";
 
 function formatDate(iso: string) {
 	return new Date(iso).toLocaleDateString("en-US", {
@@ -72,6 +81,11 @@ export function SessionTable({
 	emptyDescription,
 }: SessionTableProps) {
 	const navigate = useNavigate();
+	const [expandedRowId, setExpandedRowId] = useState<string | null>(null);
+
+	function toggleExpand(sessionId: string) {
+		setExpandedRowId((prev) => (prev === sessionId ? null : sessionId));
+	}
 
 	if (sessions.length === 0) {
 		return (
@@ -116,61 +130,117 @@ export function SessionTable({
 					</TableRow>
 				</TableHeader>
 				<TableBody>
-					{sessions.map((session) => (
-						<TableRow
-							key={session.id}
-							className="group cursor-pointer"
-							onClick={() =>
-								navigate(`/session/${session.inviteCode}`)
-							}
-						>
-							<TableCell className="font-medium">
-								{session.name}
-							</TableCell>
-							<TableCell onClick={(e) => e.stopPropagation()}>
-								<InviteCodeCell code={session.inviteCode} />
-							</TableCell>
-							<TableCell>
-								{session.isActive ? (
-									<Badge
-										variant="default"
-										className="bg-emerald-500/15 text-emerald-600 border-emerald-500/30 hover:bg-emerald-500/20"
+					{sessions.map((session) => {
+						const isExpanded = expandedRowId === session.id;
+						return (
+							<>
+								<TableRow
+									key={session.id}
+									className="group cursor-pointer"
+									onClick={() =>
+										navigate(
+											`/session/${session.inviteCode}`
+										)
+									}
+								>
+									<TableCell className="font-medium">
+										{session.name}
+									</TableCell>
+									<TableCell
+										onClick={(e) => e.stopPropagation()}
 									>
-										Active
-									</Badge>
-								) : (
-									<Badge variant="secondary">Inactive</Badge>
-								)}
-							</TableCell>
-							<TableCell className="text-muted-foreground">
-								{session._count.files}
-							</TableCell>
-							<TableCell className="text-muted-foreground">
-								{session._count.participants}
-							</TableCell>
-							<TableCell className="text-muted-foreground text-sm">
-								{formatDate(session.createdAt)}
-							</TableCell>
-							<TableCell onClick={(e) => e.stopPropagation()}>
-								{isOwner ? (
-									<SessionRowActions session={session} />
-								) : (
-									<Button
-										variant="ghost"
-										size="sm"
-										className="opacity-0 group-hover:opacity-100 transition-opacity"
-										onClick={() =>
-											navigate(
-												`/session/${session.inviteCode}`
-											)
-										}
+										<InviteCodeCell
+											code={session.inviteCode}
+										/>
+									</TableCell>
+									<TableCell>
+										{session.isActive ? (
+											<Badge
+												variant="default"
+												className="bg-emerald-500/15 text-emerald-600 border-emerald-500/30 hover:bg-emerald-500/20"
+											>
+												Active
+											</Badge>
+										) : (
+											<Badge variant="secondary">
+												Inactive
+											</Badge>
+										)}
+									</TableCell>
+
+									{/* Files column — chevron toggle */}
+									<TableCell
+										onClick={(e) => e.stopPropagation()}
 									>
-										Open →
-									</Button>
+										<button
+											onClick={() =>
+												toggleExpand(session.id)
+											}
+											className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
+											aria-label={
+												isExpanded
+													? "Collapse files"
+													: "Expand files"
+											}
+											id={`toggle-files-${session.id}`}
+										>
+											{isExpanded ? (
+												<ChevronDown className="h-3.5 w-3.5" />
+											) : (
+												<ChevronRight className="h-3.5 w-3.5" />
+											)}
+											{session._count.files}
+										</button>
+									</TableCell>
+
+									<TableCell className="text-muted-foreground">
+										{session._count.participants}
+									</TableCell>
+									<TableCell className="text-muted-foreground text-sm">
+										{formatDate(session.createdAt)}
+									</TableCell>
+									<TableCell
+										onClick={(e) => e.stopPropagation()}
+									>
+										{isOwner ? (
+											<SessionRowActions
+												session={session}
+											/>
+										) : (
+											<Button
+												variant="ghost"
+												size="sm"
+												className="opacity-0 group-hover:opacity-100 transition-opacity"
+												onClick={() =>
+													navigate(
+														`/session/${session.inviteCode}`
+													)
+												}
+											>
+												Open →
+											</Button>
+										)}
+									</TableCell>
+								</TableRow>
+
+								{/* Expandable file drawer row */}
+								{isExpanded && (
+									<TableRow
+										key={`${session.id}-files`}
+										onClick={(e) => e.stopPropagation()}
+										className="hover:bg-transparent"
+									>
+										<TableCell colSpan={7} className="p-0">
+											<SessionFilesDrawer
+												sessionId={session.id}
+												isOwner={isOwner}
+											/>
+										</TableCell>
+									</TableRow>
 								)}
-							</TableCell>
-						</TableRow>
-					))}
+							</>
+						);
+					})}
 				</TableBody>
 			</Table>
 		</div>

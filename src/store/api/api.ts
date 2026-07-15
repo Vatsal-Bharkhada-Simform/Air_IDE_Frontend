@@ -46,7 +46,6 @@ export const rootApi = createApi({
 			providesTags: ["User"],
 			onQueryStarted: async (_, { dispatch, queryFulfilled }) => {
 				const { data } = await queryFulfilled;
-				console.log(data);
 
 				if (data.data.token) {
 					dispatch(setToken(data.data.token));
@@ -215,6 +214,7 @@ export const {
 	useCreateFileMutation,
 	useListFilesQuery,
 	useGetFileQuery,
+	useLazyGetFileQuery,
 	useRenameFileMutation,
 	useDeleteFileMutation,
 } = rootApi;
