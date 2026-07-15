@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link, useNavigate } from "react-router";
+import { Link, useLocation, useNavigate } from "react-router";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -27,6 +27,8 @@ const loginSchema = z.object({
 
 export function LoginPage() {
 	const navigate = useNavigate();
+	const location = useLocation();
+	const from = (location.state as { from?: Location })?.from?.pathname ?? "/";
 	const dispatch = useApiDispatch();
 	const [loginUser, { isLoading }] = useLoginUserMutation();
 	const [serverError, setServerError] = useState<string | null>(null);
@@ -45,7 +47,7 @@ export function LoginPage() {
 			const response = await loginUser(values).unwrap();
 			if (response.success) {
 				dispatch(setToken(response.data.token));
-				navigate("/", { replace: true });
+				navigate(from, { replace: true });
 			}
 		} catch (error: any) {
 			setServerError(

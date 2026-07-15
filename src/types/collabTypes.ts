@@ -138,7 +138,7 @@ export interface SocketErrorEvent {
 /**
  * Replaces session:user-joined, session:user-left, and session:users.
  * The `users` field always contains the full, up-to-date presence list.
- * The `actor` field identifies who joined or left (absent for full-sync).
+ * The `actor` field identifies who joined or left (absent for full-sync)
  */
 export interface SessionMembershipEvent {
 	type: "joined" | "left" | "full-sync";
@@ -248,4 +248,70 @@ export interface ListFilesResponse {
 			updatedAt: string;
 		})[];
 	};
+}
+
+// ── New endpoint types ─────────────────────────────────────────
+
+/** Full file record including content — returned by GET /sessions/:id/files/:fileId */
+export interface SessionFileWithContent extends SessionFile {
+	sessionId: string;
+	content: string;
+	createdAt: string;
+	updatedAt: string;
+}
+
+// PATCH /sessions/:id/status
+export interface UpdateSessionStatusRequest {
+	id: string;
+	isActive: boolean;
+}
+
+export interface UpdateSessionStatusResponse {
+	success: boolean;
+	message: string;
+	data: { session: SessionData };
+}
+
+// GET /sessions/:id/participants
+export interface SessionParticipant {
+	id: string;
+	userId: string;
+	joinedAt: string;
+	leftAt: string | null;
+	user: { id: string; username: string };
+}
+
+export interface ListParticipantsResponse {
+	success: boolean;
+	data: { participants: SessionParticipant[] };
+}
+
+// GET /sessions/:id/files/:fileId
+export interface GetFileRequest {
+	sessionId: string;
+	fileId: string;
+}
+
+export interface GetFileResponse {
+	success: boolean;
+	data: { file: SessionFileWithContent };
+}
+
+// PATCH /sessions/:id/files/:fileId/rename
+export interface RenameFileRequest {
+	sessionId: string;
+	fileId: string;
+	newFilename: string;
+}
+
+export interface RenameFileResponse {
+	success: boolean;
+	message: string;
+	data: { file: SessionFileWithContent };
+}
+
+// DELETE /sessions/:id/files/:fileId
+export interface DeleteFileRequest {
+	sessionId: string;
+	fileId: string;
 }

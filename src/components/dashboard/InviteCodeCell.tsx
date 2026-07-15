@@ -1,16 +1,12 @@
 import { useState } from "react";
-import { Check, Copy, Link } from "lucide-react";
+import { Copy, Check, Link } from "lucide-react";
 import {
 	Tooltip,
 	TooltipContent,
 	TooltipTrigger,
 } from "@/components/ui/tooltip";
 
-interface InviteCodeBadgeProps {
-	code: string;
-}
-
-export function InviteCodeBadge({ code }: InviteCodeBadgeProps) {
+export function InviteCodeCell({ code }: { code: string }) {
 	const [copiedCode, setCopiedCode] = useState(false);
 	const [copiedLink, setCopiedLink] = useState(false);
 
@@ -28,21 +24,25 @@ export function InviteCodeBadge({ code }: InviteCodeBadgeProps) {
 	}
 
 	return (
-		<div className="flex items-center gap-1">
+		<div className="flex items-center gap-2">
+			<code className="rounded bg-muted px-2 py-0.5 text-xs font-mono tracking-widest">
+				{code}
+			</code>
+
 			{/* Copy invite code */}
 			<Tooltip>
 				<TooltipTrigger
 					render={
 						<button
 							onClick={copyCode}
-							className="flex items-center gap-1.5 rounded-md border border-border bg-muted/60 px-2.5 py-1 text-xs font-mono tracking-wider hover:bg-muted transition-colors"
+							aria-label="Copy invite code"
+							className="text-muted-foreground hover:text-foreground transition-colors"
 						>
 							{copiedCode ? (
-								<Check className="h-3 w-3 text-emerald-500 shrink-0" />
+								<Check className="h-3.5 w-3.5 text-green-500" />
 							) : (
-								<Copy className="h-3 w-3 text-muted-foreground shrink-0" />
+								<Copy className="h-3.5 w-3.5" />
 							)}
-							{code}
 						</button>
 					}
 				/>
@@ -58,10 +58,10 @@ export function InviteCodeBadge({ code }: InviteCodeBadgeProps) {
 						<button
 							onClick={copyLink}
 							aria-label="Copy session link"
-							className="flex items-center justify-center rounded-md border border-border bg-muted/60 p-1 hover:bg-muted transition-colors text-muted-foreground hover:text-foreground"
+							className="text-muted-foreground hover:text-foreground transition-colors"
 						>
 							{copiedLink ? (
-								<Check className="h-3.5 w-3.5 text-emerald-500" />
+								<Check className="h-3.5 w-3.5 text-green-500" />
 							) : (
 								<Link className="h-3.5 w-3.5" />
 							)}
