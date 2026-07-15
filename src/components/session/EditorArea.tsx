@@ -132,6 +132,8 @@ export function EditorArea({
 								cursorSmoothCaretAnimation: "on",
 								padding: { top: 12 },
 								automaticLayout: true,
+								// Required for remote-cursor user-initial badges in the gutter
+								glyphMargin: true,
 							}}
 						/>
 					</div>

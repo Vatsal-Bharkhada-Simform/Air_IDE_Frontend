@@ -210,30 +210,44 @@ export function SessionRoomPage() {
 			if (!user.cursor || user.cursor.fileId !== activeFileId) continue;
 			const { color } = user;
 			const uid = user.userId.replace(/-/g, "");
-			const cursorClass = `remote-cursor-${uid}`;
-			const labelClass = `remote-cursor-label-${uid}`;
+			const glyphClass = `remote-cursor-glyph-${uid}`;
 
-			// Inject per-user cursor styles once
+			// Inject (or update) per-user styles.
+			// The glyph badge sits in the line-number gutter — it never moves
+			// while the user is typing, so it doesn't hinder the editing experience.
 			const styleId = `cursor-style-${user.userId}`;
-			if (!document.getElementById(styleId)) {
-				const style = document.createElement("style");
-				style.id = styleId;
-				style.textContent = [
-					`.${cursorClass} { border-left: 2px solid ${color}; margin-left: -1px; }`,
-					`.${labelClass}::before { content: "${user.username[0]}"; position: absolute;`,
-					`  top: -18px; left: 0; background: ${color}; color: #fff;`,
-					`  font-size: 10px; padding: 1px 5px; border-radius: 3px; white-space: nowrap; z-index: 10; }`,
-				].join(" ");
-				document.head.appendChild(style);
+			const initial = (user.username[0] ?? "?").toUpperCase();
+			const styleContent = [
+				// User-initial badge rendered in the glyph margin (gutter)
+				`.${glyphClass} {`,
+				`  display: flex; align-items: center; justify-content: center;`,
+				`  width: 100%; height: 100%;`,
+				`  background: ${color}; color: #fff;`,
+				`  font-size: 9px; font-weight: 700; border-radius: 3px;`,
+				`  cursor: default; user-select: none;`,
+				`}`,
+				// ::before trick used by Monaco to render glyphMarginClassName content
+				`.${glyphClass}::before { content: "${initial}"; }`,
+			].join(" ");
+
+			let styleEl = document.getElementById(
+				styleId
+			) as HTMLStyleElement | null;
+			if (!styleEl) {
+				styleEl = document.createElement("style");
+				styleEl.id = styleId;
+				document.head.appendChild(styleEl);
 			}
+			styleEl.textContent = styleContent;
 
 			const line = Math.max(1, user.cursor.line);
-			const col = Math.max(1, user.cursor.column);
+
+			// User-initial badge in the glyph margin (stable — not affected by typing)
 			newDecorations.push({
-				range: new monaco.Range(line, col, line, col),
+				range: new monaco.Range(line, 1, line, 1),
 				options: {
-					className: cursorClass,
-					beforeContentClassName: labelClass,
+					glyphMarginClassName: glyphClass,
+					glyphMarginHoverMessage: { value: user.username },
 					stickiness:
 						monaco.editor.TrackedRangeStickiness
 							.NeverGrowsWhenTypingAtEdges,
