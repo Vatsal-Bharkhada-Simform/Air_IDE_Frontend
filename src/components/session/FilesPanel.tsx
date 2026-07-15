@@ -1,4 +1,4 @@
-import { FileCode } from "lucide-react";
+import { Pencil, Trash2, FileCode } from "lucide-react";
 import {
 	Tooltip,
 	TooltipContent,
@@ -12,6 +12,8 @@ export interface FilesPanelProps {
 	activeFileId: string | null;
 	users: SessionUser[];
 	onFileClick: (file: SessionFile) => void;
+	onRenameClick: (file: SessionFile) => void;
+	onDeleteClick: (file: SessionFile) => void;
 }
 
 export function FilesPanel({
@@ -19,6 +21,8 @@ export function FilesPanel({
 	activeFileId,
 	users,
 	onFileClick,
+	onRenameClick,
+	onDeleteClick,
 }: FilesPanelProps) {
 	return (
 		<div className="flex flex-col w-48 border-r border-border bg-card/50 shrink-0">
@@ -37,27 +41,30 @@ export function FilesPanel({
 						const viewers = users.filter(
 							(u) => u.cursor.fileId === file.id
 						);
+						const isActive = activeFileId === file.id;
 						return (
-							<button
+							<div
 								key={file.id}
 								className={`
-									group w-full flex items-center gap-2 px-3 py-2
-									transition-colors hover:bg-muted text-left
-									${
-										activeFileId === file.id
-											? "bg-muted text-foreground"
-											: "text-muted-foreground"
-									}
+									group relative flex items-center gap-1.5 px-2 py-1.5
+									transition-colors hover:bg-muted
+									${isActive ? "bg-muted text-foreground" : "text-muted-foreground"}
 								`}
-								onClick={() => onFileClick(file)}
 							>
-								<FileCode className="h-3.5 w-3.5 shrink-0" />
-								<span className="flex-1 truncate text-sm">
-									{file.filename}
-								</span>
-								{/* Live viewers avatars */}
+								{/* File click area */}
+								<button
+									className="flex flex-1 items-center gap-2 min-w-0 text-left"
+									onClick={() => onFileClick(file)}
+								>
+									<FileCode className="h-3.5 w-3.5 shrink-0" />
+									<span className="flex-1 truncate text-sm">
+										{file.filename}
+									</span>
+								</button>
+
+								{/* Live viewers avatars — hidden when actions are visible */}
 								{viewers.length > 0 && (
-									<div className="flex -space-x-1">
+									<div className="flex -space-x-1 group-hover:hidden">
 										{viewers.slice(0, 3).map((v) => (
 											<Tooltip key={v.userId}>
 												<TooltipTrigger
@@ -82,7 +89,52 @@ export function FilesPanel({
 										))}
 									</div>
 								)}
-							</button>
+
+								{/* Action buttons — shown on row hover */}
+								<div className="hidden group-hover:flex items-center gap-0.5 shrink-0">
+									<Tooltip>
+										<TooltipTrigger
+											render={
+												<button
+													id={`rename-file-${file.id}`}
+													className="rounded p-0.5 text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
+													onClick={(e) => {
+														e.stopPropagation();
+														onRenameClick(file);
+													}}
+													aria-label={`Rename ${file.filename}`}
+												>
+													<Pencil className="h-3.5 w-3.5" />
+												</button>
+											}
+										/>
+										<TooltipContent side="bottom">
+											Rename
+										</TooltipContent>
+									</Tooltip>
+
+									<Tooltip>
+										<TooltipTrigger
+											render={
+												<button
+													id={`delete-file-${file.id}`}
+													className="rounded p-0.5 text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
+													onClick={(e) => {
+														e.stopPropagation();
+														onDeleteClick(file);
+													}}
+													aria-label={`Delete ${file.filename}`}
+												>
+													<Trash2 className="h-3.5 w-3.5" />
+												</button>
+											}
+										/>
+										<TooltipContent side="bottom">
+											Delete
+										</TooltipContent>
+									</Tooltip>
+								</div>
+							</div>
 						);
 					})
 				)}

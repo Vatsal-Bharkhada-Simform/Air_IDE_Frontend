@@ -1,29 +1,25 @@
-import { useState, useRef, useEffect, useCallback } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Navigate, useNavigate, useParams } from "react-router";
-import type { OnMount } from "@monaco-editor/react";
 import type * as MonacoType from "monaco-editor";
-import * as Y from "yjs";
-import { MonacoBinding } from "y-monaco";
 
 import {
 	useJoinSessionQuery,
 	useOpenFileQuery,
-	useMoveCursorMutation,
-	useSelectTextMutation,
-	useSaveFileMutation,
+	useDeleteFileMutation,
+	useRenameFileMutation,
 } from "@/store/api/collabApi";
-import {
-	useGetUserQuery,
-	useListFilesQuery,
-	useCreateFileMutation,
-} from "@/store/api/api";
+import { useGetUserQuery, useCreateFileMutation } from "@/store/api/api";
 import { useRootSelector } from "@/store/store";
 import type {
 	SessionFile,
 	SessionUser,
 	SocketConnectionStatus,
+	FileDeletedEvent,
+	FileRenamedEvent,
+	SessionEndedEvent,
 } from "@/types/collabTypes";
 import { getSocket } from "@/store/socketManager";
+import { useYjsSession } from "@/hooks/useYjsSession";
 
 // Sub-components
 import { SessionHeader } from "@/components/session/SessionHeader";
@@ -31,6 +27,8 @@ import { MembersSidebar } from "@/components/session/MembersSidebar";
 import { FilesPanel } from "@/components/session/FilesPanel";
 import { EditorArea } from "@/components/session/EditorArea";
 import { NewFileDialog } from "@/components/session/NewFileDialog";
+import { DeleteFileDialog } from "@/components/session/DeleteFileDialog";
+import { RenameFileDialog } from "@/components/session/RenameFileDialog";
 import {
 	ConnectingScreen,
 	ErrorScreen,
@@ -45,12 +43,12 @@ export function SessionRoomPage() {
 	const { roomId } = useParams<{ roomId: string }>();
 	const navigate = useNavigate();
 
-	// ── Auth & user ──────────────────────────────────────────
+	// ── Auth & user ─────────────────────────────────────────────
 	const token = useRootSelector((state) => state.auth.token);
 	const { data: userData } = useGetUserQuery();
 	const username = userData?.data.user.username ?? "";
 
-	// ── Socket / session join ────────────────────────────────
+	// ── Socket / session join ────────────────────────────────────
 	const skipJoin = !roomId || !token;
 	const { data: sessionState } = useJoinSessionQuery(
 		{ inviteCode: roomId ?? "", token: token ?? "" },
@@ -62,192 +60,141 @@ export function SessionRoomPage() {
 	const sessionName = sessionState?.session?.name ?? "";
 	const users: SessionUser[] = sessionState?.users ?? EMPTY_USERS;
 	const socketError = sessionState?.error ?? null;
+	const sessionId = sessionState?.session?.id;
 
-	// ── Local UI state ───────────────────────────────────────
+	// ── File list ────────────────────────────────────────────────
+	// sessionState.session.files is kept live by socket events
+	// (file:created / file:deleted / file:renamed in collabApi).
+	const files = sessionState?.session?.files ?? [];
+
+	// ── Tab / editor UI state ────────────────────────────────────
 	const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 	const [openTabs, setOpenTabs] = useState<SessionFile[]>([]);
 	const [activeFileId, setActiveFileId] = useState<string | null>(null);
 	const [dirtyFiles, setDirtyFiles] = useState<Set<string>>(new Set());
+
+	// ── Dialog state ─────────────────────────────────────────────
 	const [newFileOpen, setNewFileOpen] = useState(false);
+	const [deleteTarget, setDeleteTarget] = useState<SessionFile | null>(null);
+	const [renameTarget, setRenameTarget] = useState<SessionFile | null>(null);
 
-	// ── File management ───────────────────────────────────────
-	const sessionId = sessionState?.session?.id;
+	// ── Mutations ────────────────────────────────────────────────
+	const [createFile, { isLoading: isCreatingFile }] = useCreateFileMutation();
+	const [deleteFile] = useDeleteFileMutation();
+	const [renameFile] = useRenameFileMutation();
 
-	const { data: filesData, refetch: refetchFiles } = useListFilesQuery(
-		sessionId ?? "",
-		{ skip: !sessionId }
+	// Stabilise the onFileDirty callback with a ref so changes to setDirtyFiles
+	// don't recreate the hook's memoized functions (which depend on it).
+	const onFileDirtyRef = useRef((fileId: string) =>
+		setDirtyFiles((prev) => new Set(prev).add(fileId))
 	);
-	const files = filesData?.data.files ?? sessionState?.session?.files ?? [];
 
-	// Fetch initial DB state via REST/Socket wrapper
+	// ── Yjs / Monaco collaboration ───────────────────────────────
+	const {
+		yDocsRef,
+		editorRef,
+		monacoRef,
+		loadedFileIdsRef,
+		activeFileIdRef,
+		bindYjsToMonaco,
+		initFileDoc,
+		initNewFileDoc,
+		destroyFileDoc,
+		handleEditorMount,
+		handleSave,
+	} = useYjsSession(sessionId, (fileId) => onFileDirtyRef.current(fileId));
+
+	// Keep the activeFileId ref in sync so Yjs closures always see the latest value
+	useEffect(() => {
+		activeFileIdRef.current = activeFileId;
+	});
+
+	// ── File open: initialize Yjs doc once per file ──────────────
 	const { data: fileData } = useOpenFileQuery(
 		{ sessionId: sessionId ?? "", fileId: activeFileId ?? "" },
 		{ skip: !sessionId || !activeFileId }
 	);
 
-	const [createFile, { isLoading: isCreatingFile }] = useCreateFileMutation();
-	const loadedFileIdRef = useRef<string | null>(null);
-
-	const lastSavedBy = fileData?.lastSavedBy ?? null;
-	const lastSavedAt = fileData?.lastSavedAt ?? null;
-
-	// ── Yjs State ────────────────────────────────────────────
-	const yDocsRef = useRef<Record<string, Y.Doc>>({});
-	const yBindingsRef = useRef<Record<string, MonacoBinding>>({});
-	const editorRef = useRef<MonacoType.editor.IStandaloneCodeEditor | null>(
-		null
-	);
-	const monacoRef = useRef<typeof MonacoType | null>(null);
-	const decorationIdsRef = useRef<string[]>([]);
-	const sessionIdRef = useRef(sessionId);
-	const activeFileIdRef = useRef(activeFileId);
-
-	// ── Mutations ────────────────────────────────────────────
-	const [saveFile] = useSaveFileMutation();
-	const [moveCursor] = useMoveCursorMutation();
-	const [selectText] = useSelectTextMutation();
-
-	const moveCursorRef = useRef(moveCursor);
-	const selectTextRef = useRef(selectText);
-	const handleSaveRef = useRef<() => void>(() => {});
-
-	useEffect(() => {
-		sessionIdRef.current = sessionId;
-		activeFileIdRef.current = activeFileId;
-		moveCursorRef.current = moveCursor;
-		selectTextRef.current = selectText;
-		handleSaveRef.current = handleSave;
-	});
-
-	// ── Yjs & Monaco Binding Logic ────────────────────────────
-
-	const bindYjsToMonaco = useCallback((fileId: string) => {
-		const editor = editorRef.current;
-		const doc = yDocsRef.current[fileId];
-		if (!editor || !doc) return;
-
-		// Clean up old binding
-		if (yBindingsRef.current[fileId]) {
-			yBindingsRef.current[fileId].destroy();
-		}
-
-		// Since we use the `path` prop in <Editor>, Monaco automatically
-		// swaps the ITextModel. We get the current one.
-		const model = editor.getModel();
-		if (!model) return;
-
-		const ytext = doc.getText("content");
-		yBindingsRef.current[fileId] = new MonacoBinding(
-			ytext,
-			model,
-			new Set([editor]),
-			null // we can add awareness here later
-		);
-	}, []);
-
-	// Handle initial file content delivery
 	useEffect(() => {
 		if (!fileData || fileData.fileId !== activeFileId || !sessionId) return;
-
-		if (loadedFileIdRef.current !== activeFileId) {
-			loadedFileIdRef.current = activeFileId;
-
-			if (!yDocsRef.current[activeFileId]) {
-				const doc = new Y.Doc();
-				yDocsRef.current[activeFileId] = doc;
-
-				// Listen for local updates to broadcast
-				doc.on("update", (update: Uint8Array, origin: unknown) => {
-					// MonacoBinding sets origin to itself when it creates an update.
-					// If the origin is 'remote', we applied it from the socket, so don't re-broadcast.
-					if (origin !== "remote") {
-						getSocket()?.emit("update", {
-							sessionId,
-							fileId: activeFileId,
-							update: Array.from(update),
-						});
-					}
-
-					// Mark dirty if it's a local edit
-					if (origin !== "remote") {
-						setDirtyFiles((prev) =>
-							new Set(prev).add(activeFileId)
-						);
-					}
-				});
-			}
-
-			// If the editor is mounted, bind it immediately
-			if (editorRef.current) {
-				bindYjsToMonaco(activeFileId);
-			}
-
-			// Send sync-request to get missed changes
-			const doc = yDocsRef.current[activeFileId];
-			if (doc && getSocket()?.connected) {
-				getSocket()?.emit("sync-request", {
-					sessionId,
-					fileId: activeFileId,
-					stateVector: Array.from(Y.encodeStateVector(doc)),
-				});
-			}
+		if (!loadedFileIdsRef.current.has(activeFileId)) {
+			loadedFileIdsRef.current.add(activeFileId);
+			initFileDoc(activeFileId);
 		}
-		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [
 		fileData?.fileId,
 		fileData?.content,
 		activeFileId,
 		sessionId,
-		bindYjsToMonaco,
+		initFileDoc,
+		loadedFileIdsRef,
 	]);
 
-	// Socket listeners for Yjs updates
+	// Clear dirty flag when the server confirms a save
+	useEffect(() => {
+		if (fileData?.lastSavedAt && activeFileId) {
+			setDirtyFiles((prev) => {
+				const next = new Set(prev);
+				next.delete(activeFileId);
+				return next;
+			});
+		}
+	}, [fileData?.lastSavedAt, activeFileId]);
+
+	// ── Room-level socket events ─────────────────────────────────
+	// These mutate tab state (openTabs, activeFileId) which belongs to this
+	// component, so they stay here rather than inside useYjsSession.
 	useEffect(() => {
 		const socket = getSocket();
 		if (!socket || !sessionId) return;
 
-		const onUpdate = (event: { fileId: string; update: number[] }) => {
-			const doc = yDocsRef.current[event.fileId];
-			if (doc) {
-				Y.applyUpdate(doc, new Uint8Array(event.update), "remote");
-			}
+		const onFileDeleted = (event: FileDeletedEvent) => {
+			const { fileId } = event;
+			destroyFileDoc(fileId);
+			setOpenTabs((prev) => {
+				const remaining = prev.filter((t) => t.id !== fileId);
+				setActiveFileId((current) => {
+					if (current !== fileId) return current;
+					const next = remaining[remaining.length - 1] ?? null;
+					if (next?.id) setTimeout(() => bindYjsToMonaco(next.id), 0);
+					return next?.id ?? null;
+				});
+				return remaining;
+			});
+			setDirtyFiles((prev) => {
+				const next = new Set(prev);
+				next.delete(fileId);
+				return next;
+			});
 		};
 
-		const onSyncResponse = (event: {
-			fileId: string;
-			update: number[];
-		}) => {
-			const doc = yDocsRef.current[event.fileId];
-			if (doc) {
-				Y.applyUpdate(doc, new Uint8Array(event.update), "remote");
-			}
+		const onFileRenamed = (event: FileRenamedEvent) => {
+			setOpenTabs((prev) =>
+				prev.map((t) =>
+					t.id === event.fileId
+						? { ...t, filename: event.newFilename }
+						: t
+				)
+			);
 		};
 
-		const onConnect = () => {
-			if (activeFileIdRef.current) {
-				const doc = yDocsRef.current[activeFileIdRef.current];
-				if (doc) {
-					socket.emit("sync-request", {
-						sessionId: sessionIdRef.current,
-						fileId: activeFileIdRef.current,
-						stateVector: Array.from(Y.encodeStateVector(doc)),
-					});
-				}
-			}
+		const onSessionEnded = (_event: SessionEndedEvent) => {
+			navigate("/");
 		};
 
-		socket.on("update", onUpdate);
-		socket.on("sync-response", onSyncResponse);
-		socket.on("connect", onConnect);
+		socket.on("file:deleted", onFileDeleted);
+		socket.on("file:renamed", onFileRenamed);
+		socket.on("session:ended", onSessionEnded);
 
 		return () => {
-			socket.off("update", onUpdate);
-			socket.off("sync-response", onSyncResponse);
-			socket.off("connect", onConnect);
+			socket.off("file:deleted", onFileDeleted);
+			socket.off("file:renamed", onFileRenamed);
+			socket.off("session:ended", onSessionEnded);
 		};
-	}, [sessionId]); // removed activeFileId so it listens for all open tabs
+	}, [sessionId, navigate, destroyFileDoc, bindYjsToMonaco]);
 
-	// Cursor decorators
+	// ── Cursor decorations ───────────────────────────────────────
+	const decorationIdsRef = useRef<string[]>([]);
 	useEffect(() => {
 		const editor = editorRef.current;
 		const monaco = monacoRef.current;
@@ -261,18 +208,19 @@ export function SessionRoomPage() {
 
 		for (const user of users) {
 			if (!user.cursor || user.cursor.fileId !== activeFileId) continue;
-			const color = user.color;
+			const { color } = user;
 			const uid = user.userId.replace(/-/g, "");
 			const cursorClass = `remote-cursor-${uid}`;
 			const labelClass = `remote-cursor-label-${uid}`;
 
+			// Inject per-user cursor styles once
 			const styleId = `cursor-style-${user.userId}`;
 			if (!document.getElementById(styleId)) {
 				const style = document.createElement("style");
 				style.id = styleId;
 				style.textContent = [
 					`.${cursorClass} { border-left: 2px solid ${color}; margin-left: -1px; }`,
-					`.${labelClass}::before { content: "${user.username}"; position: absolute;`,
+					`.${labelClass}::before { content: "${user.username[0]}"; position: absolute;`,
 					`  top: -18px; left: 0; background: ${color}; color: #fff;`,
 					`  font-size: 10px; padding: 1px 5px; border-radius: 3px; white-space: nowrap; z-index: 10; }`,
 				].join(" ");
@@ -302,7 +250,6 @@ export function SessionRoomPage() {
 					style.textContent = `.${selClass} { background: ${color}33; }`;
 					document.head.appendChild(style);
 				}
-
 				newDecorations.push({
 					range: new monaco.Range(
 						sel.startLine,
@@ -325,78 +272,11 @@ export function SessionRoomPage() {
 			newDecorations
 		);
 	}, [users, activeFileId]);
+	// editorRef and monacoRef are excluded from deps — they are refs with stable
+	// identity; reading .current inside the effect is intentional and safe.
 
-	useEffect(() => {
-		if (fileData?.lastSavedAt && activeFileId) {
-			// eslint-disable-next-line
-			setDirtyFiles((prev) => {
-				const next = new Set(prev);
-				next.delete(activeFileId);
-				return next;
-			});
-		}
-	}, [fileData, activeFileId]);
-
-	const handleEditorMount = useCallback<OnMount>(
-		(editor, monaco) => {
-			editorRef.current = editor;
-			monacoRef.current = monaco as unknown as typeof MonacoType;
-
-			editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyS, () =>
-				handleSaveRef.current()
-			);
-
-			if (
-				activeFileIdRef.current &&
-				yDocsRef.current[activeFileIdRef.current]
-			) {
-				bindYjsToMonaco(activeFileIdRef.current);
-			}
-
-			let cursorTimer: ReturnType<typeof setTimeout> | null = null;
-			editor.onDidChangeCursorPosition((e) => {
-				if (cursorTimer) clearTimeout(cursorTimer);
-				cursorTimer = setTimeout(() => {
-					const sid = sessionIdRef.current;
-					const fid = activeFileIdRef.current;
-					if (!sid || !fid) return;
-					void moveCursorRef.current({
-						sessionId: sid,
-						fileId: fid,
-						line: e.position.lineNumber,
-						column: e.position.column,
-					});
-				}, 80);
-			});
-
-			let selTimer: ReturnType<typeof setTimeout> | null = null;
-			editor.onDidChangeCursorSelection((e) => {
-				if (selTimer) clearTimeout(selTimer);
-				selTimer = setTimeout(() => {
-					const sid = sessionIdRef.current;
-					const fid = activeFileIdRef.current;
-					if (!sid || !fid) return;
-					const sel = e.selection;
-					if (sel.isEmpty()) return;
-					void selectTextRef.current({
-						sessionId: sid,
-						fileId: fid,
-						selection: {
-							startLine: sel.startLineNumber,
-							startColumn: sel.startColumn,
-							endLine: sel.endLineNumber,
-							endColumn: sel.endColumn,
-						},
-					});
-				}, 80);
-			});
-		},
-		[bindYjsToMonaco]
-	);
-
-	if (!token) {
-		return <Navigate to="/auth/login" replace />;
-	}
+	// ── Early returns for non-connected states ───────────────────
+	if (!token) return <Navigate to="/auth/login" replace />;
 
 	if (connectionStatus === "idle" || connectionStatus === "connecting") {
 		return <ConnectingScreen />;
@@ -414,15 +294,15 @@ export function SessionRoomPage() {
 		);
 	}
 
+	// ── Tab handlers ─────────────────────────────────────────────
 	function openFile(file: SessionFile) {
-		if (file.id !== activeFileId) {
-			// Trigger re-bind if doc already exists
-			if (yDocsRef.current[file.id] && editorRef.current) {
-				// Delay binding until next frame to allow Editor's `path` prop to swap the model first
-				setTimeout(() => {
-					bindYjsToMonaco(file.id);
-				}, 0);
-			}
+		if (
+			file.id !== activeFileId &&
+			yDocsRef.current[file.id] &&
+			editorRef.current
+		) {
+			// Doc already loaded — re-bind after Monaco swaps the model
+			setTimeout(() => bindYjsToMonaco(file.id), 0);
 		}
 		setActiveFileId(file.id);
 		if (!openTabs.some((t) => t.id === file.id)) {
@@ -431,85 +311,48 @@ export function SessionRoomPage() {
 	}
 
 	function closeTab(fileId: string) {
+		destroyFileDoc(fileId);
 		setOpenTabs((prev) => prev.filter((t) => t.id !== fileId));
 		setDirtyFiles((prev) => {
 			const next = new Set(prev);
 			next.delete(fileId);
 			return next;
 		});
-
-		if (yBindingsRef.current[fileId]) {
-			yBindingsRef.current[fileId].destroy();
-			delete yBindingsRef.current[fileId];
-		}
-		if (yDocsRef.current[fileId]) {
-			yDocsRef.current[fileId].destroy();
-			delete yDocsRef.current[fileId];
-		}
-
 		if (activeFileId === fileId) {
 			const remaining = openTabs.filter((t) => t.id !== fileId);
 			const next = remaining[remaining.length - 1] ?? null;
 			setActiveFileId(next?.id ?? null);
-			if (next?.id) {
-				setTimeout(() => bindYjsToMonaco(next.id), 0);
-			}
+			if (next?.id) setTimeout(() => bindYjsToMonaco(next.id), 0);
 		}
 	}
 
-	function handleSave() {
-		if (!sessionId || !activeFileId) return;
-		const doc = yDocsRef.current[activeFileId];
-		if (!doc) return;
-
-		void saveFile({
-			sessionId,
-			fileId: activeFileId,
-			content: doc.getText("content").toString(),
-		});
-	}
-
+	// ── New file handler ─────────────────────────────────────────
 	async function handleNewFile(filename: string): Promise<boolean> {
 		if (!sessionId) return false;
-		const lang = langFromFilename(filename);
 		try {
 			const result = await createFile({
 				sessionId,
 				filename,
-				language: lang,
+				language: langFromFilename(filename),
 			}).unwrap();
+
 			const newFile: SessionFile = {
 				id: result.data.file.id,
 				filename: result.data.file.filename,
 				language: result.data.file.language,
 			};
+
 			setOpenTabs((prev) => [...prev, newFile]);
 			setActiveFileId(newFile.id);
-
-			// We don't set loadedFileIdRef here because we want the query to fetch the initial empty state
-			// But since we just created it, we can prepopulate Y.Doc
-			const doc = new Y.Doc();
-			yDocsRef.current[newFile.id] = doc;
-			doc.on("update", (update: Uint8Array, origin: unknown) => {
-				if (origin !== "remote") {
-					getSocket()?.emit("update", {
-						sessionId,
-						fileId: newFile.id,
-						update: Array.from(update),
-					});
-					setDirtyFiles((prev) => new Set(prev).add(newFile.id));
-				}
-			});
-			loadedFileIdRef.current = newFile.id;
-			setTimeout(() => bindYjsToMonaco(newFile.id), 0);
-
-			void refetchFiles();
+			loadedFileIdsRef.current.add(newFile.id);
+			initNewFileDoc(newFile.id);
 			return true;
 		} catch {
 			return false;
 		}
 	}
 
+	// ── Render ───────────────────────────────────────────────────
 	return (
 		<div className="h-screen flex flex-col overflow-hidden bg-background">
 			<SessionHeader
@@ -533,6 +376,8 @@ export function SessionRoomPage() {
 					activeFileId={activeFileId}
 					users={users}
 					onFileClick={openFile}
+					onRenameClick={(file) => setRenameTarget(file)}
+					onDeleteClick={(file) => setDeleteTarget(file)}
 				/>
 
 				<EditorArea
@@ -542,10 +387,10 @@ export function SessionRoomPage() {
 					onTabClick={openFile}
 					onTabClose={closeTab}
 					onNewFileClick={() => setNewFileOpen(true)}
-					onSave={handleSave}
+					onSave={() => handleSave(activeFileId ?? "")}
 					onEditorMount={handleEditorMount}
-					lastSavedBy={lastSavedBy}
-					lastSavedAt={lastSavedAt}
+					lastSavedBy={fileData?.lastSavedBy ?? null}
+					lastSavedAt={fileData?.lastSavedAt ?? null}
 				/>
 			</div>
 
@@ -554,6 +399,35 @@ export function SessionRoomPage() {
 				onClose={() => setNewFileOpen(false)}
 				onConfirm={handleNewFile}
 				isCreating={isCreatingFile}
+			/>
+
+			<DeleteFileDialog
+				open={deleteTarget !== null}
+				filename={deleteTarget?.filename ?? ""}
+				onClose={() => setDeleteTarget(null)}
+				onConfirm={() => {
+					if (!deleteTarget || !sessionId) return;
+					void deleteFile({ sessionId, fileId: deleteTarget.id });
+				}}
+			/>
+
+			<RenameFileDialog
+				open={renameTarget !== null}
+				currentFilename={renameTarget?.filename ?? ""}
+				onClose={() => setRenameTarget(null)}
+				onConfirm={async (newFilename) => {
+					if (!renameTarget || !sessionId) return false;
+					try {
+						await renameFile({
+							sessionId,
+							fileId: renameTarget.id,
+							newFilename,
+						}).unwrap();
+						return true;
+					} catch {
+						return false;
+					}
+				}}
 			/>
 		</div>
 	);

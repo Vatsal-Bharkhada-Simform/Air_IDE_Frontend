@@ -133,6 +133,48 @@ export interface SocketErrorEvent {
 	message: string;
 }
 
+// ── New consolidated / added events ────────────────────────────
+
+/**
+ * Replaces session:user-joined, session:user-left, and session:users.
+ * The `users` field always contains the full, up-to-date presence list.
+ * The `actor` field identifies who joined or left (absent for full-sync).
+ */
+export interface SessionMembershipEvent {
+	type: "joined" | "left" | "full-sync";
+	users: SessionUser[];
+	actor?: {
+		userId: string;
+		username: string;
+		color: string;
+	};
+}
+
+/** Emitted to all users when a file is created via REST. */
+export interface FileCreatedEvent {
+	file: SessionFile;
+	createdBy: string;
+}
+
+/** Emitted to all users when a file is deleted. */
+export interface FileDeletedEvent {
+	fileId: string;
+	deletedBy: string;
+}
+
+/** Emitted to all users when a file is renamed. */
+export interface FileRenamedEvent {
+	fileId: string;
+	newFilename: string;
+	renamedBy: string;
+}
+
+/** Emitted to all users when the session creator ends the session. */
+export interface SessionEndedEvent {
+	sessionId: string;
+	endedBy: string;
+}
+
 export interface SessionData {
 	id: string;
 	name: string;

@@ -14,12 +14,33 @@ import type {
 	SelectTextArgs,
 	SessionUser,
 	SocketErrorEvent,
+	SessionMembershipEvent,
+	FileCreatedEvent,
+	FileDeletedEvent,
+	FileRenamedEvent,
+	SessionEndedEvent,
 } from "../../types/collabTypes";
+
+export interface DeleteFileArgs {
+	sessionId: string;
+	fileId: string;
+}
+
+export interface RenameFileArgs {
+	sessionId: string;
+	fileId: string;
+	newFilename: string;
+}
 
 export const collabApi = rootApi.injectEndpoints({
 	endpoints: (builder) => ({
 		// Joins a session room and keeps active users, cursors, and connection status in sync for the page's lifetime
 		joinSession: builder.query<JoinSessionResult, JoinSessionArgs>({
+			// Remove the cache entry (and run onCacheEntryAdded cleanup) the
+			// moment SessionRoomPage unmounts rather than after the default 60 s.
+			// Without this, session:leave is not emitted until the socket times
+			// out, so other users never see the member leave.
+			keepUnusedDataFor: 0,
 			queryFn: () => ({
 				data: {
 					session: null,
@@ -72,38 +93,9 @@ export const collabApi = rootApi.injectEndpoints({
 					});
 				};
 
-				const onUserJoined = (user: {
-					userId: string;
-					username: string;
-					color: string;
-				}) => {
+				const onMembership = (event: SessionMembershipEvent) => {
 					updateCachedData((draft) => {
-						if (
-							!draft.users.some((u) => u.userId === user.userId)
-						) {
-							draft.users.push({
-								...user,
-								cursor: { fileId: null, line: 1, column: 0 },
-								selection: null,
-							});
-						}
-					});
-				};
-
-				const onUserLeft = (user: {
-					userId: string;
-					username: string;
-				}) => {
-					updateCachedData((draft) => {
-						draft.users = draft.users.filter(
-							(u) => u.userId !== user.userId
-						);
-					});
-				};
-
-				const onUsersList = (users: SessionUser[]) => {
-					updateCachedData((draft) => {
-						draft.users = users;
+						draft.users = event.users;
 					});
 				};
 
@@ -141,13 +133,57 @@ export const collabApi = rootApi.injectEndpoints({
 					});
 				};
 
+				const onFileCreated = (event: FileCreatedEvent) => {
+					updateCachedData((draft) => {
+						if (draft.session) {
+							// Avoid duplicates if the creating user also receives this
+							if (
+								!draft.session.files.some(
+									(f) => f.id === event.file.id
+								)
+							) {
+								draft.session.files.push(event.file);
+							}
+						}
+					});
+				};
+
+				const onFileDeleted = (event: FileDeletedEvent) => {
+					updateCachedData((draft) => {
+						if (draft.session) {
+							draft.session.files = draft.session.files.filter(
+								(f) => f.id !== event.fileId
+							);
+						}
+					});
+				};
+
+				const onFileRenamed = (event: FileRenamedEvent) => {
+					updateCachedData((draft) => {
+						if (draft.session) {
+							const file = draft.session.files.find(
+								(f) => f.id === event.fileId
+							);
+							if (file) file.filename = event.newFilename;
+						}
+					});
+				};
+
+				const onSessionEnded = (_event: SessionEndedEvent) => {
+					updateCachedData((draft) => {
+						draft.connectionStatus = "disconnected";
+					});
+				};
+
 				socket.on("connect", onConnect);
 				socket.on("connect_error", onConnectError);
 				socket.on("disconnect", onDisconnect);
 				socket.on("session:joined", onJoined);
-				socket.on("session:user-joined", onUserJoined);
-				socket.on("session:user-left", onUserLeft);
-				socket.on("session:users", onUsersList);
+				socket.on("session:membership", onMembership);
+				socket.on("session:ended", onSessionEnded);
+				socket.on("file:created", onFileCreated);
+				socket.on("file:deleted", onFileDeleted);
+				socket.on("file:renamed", onFileRenamed);
 				socket.on("cursor:moved", onCursorMoved);
 				socket.on("cursor:selected", onCursorSelected);
 				socket.on("error", onError);
@@ -170,9 +206,11 @@ export const collabApi = rootApi.injectEndpoints({
 				socket.off("connect_error", onConnectError);
 				socket.off("disconnect", onDisconnect);
 				socket.off("session:joined", onJoined);
-				socket.off("session:user-joined", onUserJoined);
-				socket.off("session:user-left", onUserLeft);
-				socket.off("session:users", onUsersList);
+				socket.off("session:membership", onMembership);
+				socket.off("session:ended", onSessionEnded);
+				socket.off("file:created", onFileCreated);
+				socket.off("file:deleted", onFileDeleted);
+				socket.off("file:renamed", onFileRenamed);
 				socket.off("cursor:moved", onCursorMoved);
 				socket.off("cursor:selected", onCursorSelected);
 				socket.off("error", onError);
@@ -248,7 +286,12 @@ export const collabApi = rootApi.injectEndpoints({
 		// Broadcasts a local text change to collaborators without persisting it
 		editFile: builder.mutation<null, EditFileArgs>({
 			queryFn: ({ sessionId, fileId, changes }) => {
-				getSocket()?.emit("update", { sessionId, fileId, changes });
+				// Server's `update` handler destructures { update }, not { changes }.
+				getSocket()?.emit("update", {
+					sessionId,
+					fileId,
+					update: changes,
+				});
 				return { data: null };
 			},
 		}),
@@ -285,6 +328,26 @@ export const collabApi = rootApi.injectEndpoints({
 				return { data: null };
 			},
 		}),
+
+		// Sends file:delete to the server; all peers receive file:deleted
+		deleteFile: builder.mutation<null, DeleteFileArgs>({
+			queryFn: ({ sessionId, fileId }) => {
+				getSocket()?.emit("file:delete", { sessionId, fileId });
+				return { data: null };
+			},
+		}),
+
+		// Sends file:rename to the server; all peers receive file:renamed
+		renameFile: builder.mutation<null, RenameFileArgs>({
+			queryFn: ({ sessionId, fileId, newFilename }) => {
+				getSocket()?.emit("file:rename", {
+					sessionId,
+					fileId,
+					newFilename,
+				});
+				return { data: null };
+			},
+		}),
 	}),
 });
 
@@ -295,4 +358,6 @@ export const {
 	useSaveFileMutation,
 	useMoveCursorMutation,
 	useSelectTextMutation,
+	useDeleteFileMutation,
+	useRenameFileMutation,
 } = collabApi;
