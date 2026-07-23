@@ -74,7 +74,7 @@ export function RenameFileDialog({
 			<DialogContent className="sm:max-w-sm">
 				<DialogHeader>
 					<DialogTitle className="flex items-center gap-2">
-						<Pencil className="h-5 w-5 text-primary" />
+						<Pencil className="h-5 w-5 text-signal-blue" />
 						Rename File
 					</DialogTitle>
 					<DialogDescription>

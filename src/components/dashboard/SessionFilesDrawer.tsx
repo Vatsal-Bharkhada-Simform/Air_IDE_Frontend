@@ -51,6 +51,7 @@ export function SessionFilesDrawer({
 	const { data, isLoading, isError } = useListFilesQuery(sessionId);
 	const [fetchFile] = useLazyGetFileQuery();
 	const [downloading, setDownloading] = useState<string | null>(null);
+	const [downloadError, setDownloadError] = useState<string | null>(null);
 	const [deleteTarget, setDeleteTarget] = useState<{
 		fileId: string;
 		filename: string;
@@ -73,7 +74,8 @@ export function SessionFilesDrawer({
 			document.body.removeChild(a);
 			URL.revokeObjectURL(url);
 		} catch {
-			// silently fail — user sees no download
+			setDownloadError(fileId);
+			setTimeout(() => setDownloadError(null), 3000);
 		} finally {
 			setDownloading(null);
 		}
@@ -135,6 +137,11 @@ export function SessionFilesDrawer({
 								<span className="text-sm font-medium truncate">
 									{file.filename}
 								</span>
+							)}
+							{downloadError === file.id && (
+								<p className="text-xs text-destructive mt-0.5">
+									Download failed
+								</p>
 							)}
 						</div>
 

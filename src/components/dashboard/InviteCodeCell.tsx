@@ -39,7 +39,7 @@ export function InviteCodeCell({ code }: { code: string }) {
 							className="text-muted-foreground hover:text-foreground transition-colors"
 						>
 							{copiedCode ? (
-								<Check className="h-3.5 w-3.5 text-green-500" />
+								<Check className="h-3.5 w-3.5 text-status-live" />
 							) : (
 								<Copy className="h-3.5 w-3.5" />
 							)}
@@ -61,7 +61,7 @@ export function InviteCodeCell({ code }: { code: string }) {
 							className="text-muted-foreground hover:text-foreground transition-colors"
 						>
 							{copiedLink ? (
-								<Check className="h-3.5 w-3.5 text-green-500" />
+								<Check className="h-3.5 w-3.5 text-status-live" />
 							) : (
 								<Link className="h-3.5 w-3.5" />
 							)}

@@ -46,10 +46,10 @@ export function FilesPanel({
 							<div
 								key={file.id}
 								className={`
-									group relative flex items-center gap-1.5 px-2 py-1.5
-									transition-colors hover:bg-muted
-									${isActive ? "bg-muted text-foreground" : "text-muted-foreground"}
-								`}
+								group relative flex items-center gap-1.5 px-2 py-1.5
+								transition-colors hover:bg-muted
+								${isActive ? "bg-muted text-foreground border-l-2 border-l-signal-blue pl-[6px]" : "text-muted-foreground border-l-2 border-l-transparent"}
+							`}
 							>
 								{/* File click area */}
 								<button

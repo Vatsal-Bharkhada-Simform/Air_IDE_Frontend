@@ -24,7 +24,7 @@ export function FileTab({
 				border-b-2
 				${
 					isActive
-						? "bg-background text-foreground border-b-primary"
+						? "bg-background text-foreground border-b-signal-blue"
 						: "bg-muted/40 text-muted-foreground hover:bg-muted/80 hover:text-foreground border-b-transparent"
 				}
 			`}
@@ -48,7 +48,7 @@ export function FileTab({
 				}
 			>
 				{isDirty ? (
-					<Circle className="h-2 w-2 fill-current text-amber-400" />
+					<Circle className="h-2 w-2 fill-current text-status-warn" />
 				) : (
 					<X className="h-3 w-3" />
 				)}

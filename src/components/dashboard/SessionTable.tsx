@@ -46,8 +46,8 @@ function EmptyState({
 }: EmptyStateProps) {
 	return (
 		<div className="flex flex-col items-center justify-center py-20 text-center gap-4">
-			<div className="rounded-full bg-muted p-5">
-				<FileCode2 className="h-10 w-10 text-muted-foreground" />
+			<div className="flex h-14 w-14 items-center justify-center rounded-xl bg-signal-blue text-white">
+				<FileCode2 className="h-7 w-7" />
 			</div>
 			<div className="space-y-1">
 				<h3 className="font-semibold text-lg">{label}</h3>
@@ -143,8 +143,13 @@ export function SessionTable({
 										)
 									}
 								>
-									<TableCell className="font-medium">
-										{session.name}
+									<TableCell className="font-medium max-w-[200px]">
+										<span
+											className="block truncate"
+											title={session.name}
+										>
+											{session.name}
+										</span>
 									</TableCell>
 									<TableCell
 										onClick={(e) => e.stopPropagation()}
@@ -157,7 +162,7 @@ export function SessionTable({
 										{session.isActive ? (
 											<Badge
 												variant="default"
-												className="bg-emerald-500/15 text-emerald-600 border-emerald-500/30 hover:bg-emerald-500/20"
+												className="bg-status-live/15 text-status-live border-status-live/30 hover:bg-status-live/20"
 											>
 												Active
 											</Badge>

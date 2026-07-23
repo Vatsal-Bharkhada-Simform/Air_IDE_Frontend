@@ -57,7 +57,7 @@ export function NewFileDialog({
 			<DialogContent className="sm:max-w-sm">
 				<DialogHeader>
 					<DialogTitle className="flex items-center gap-2">
-						<FilePlus className="h-5 w-5 text-primary" />
+						<FilePlus className="h-5 w-5 text-signal-blue" />
 						New File
 					</DialogTitle>
 					<DialogDescription>

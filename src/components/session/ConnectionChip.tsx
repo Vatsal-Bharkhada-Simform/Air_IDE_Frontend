@@ -7,15 +7,15 @@ export function ConnectionChip({ status }: { status: SocketConnectionStatus }) {
 		connecting: {
 			label: "Connecting…",
 			icon: Loader2,
-			cls: "text-amber-500 animate-spin",
+			cls: "text-status-warn animate-spin",
 		},
-		connected: { label: "Live", icon: Wifi, cls: "text-emerald-500" },
+		connected: { label: "Live", icon: Wifi, cls: "text-status-live" },
 		disconnected: {
 			label: "Disconnected",
 			icon: WifiOff,
-			cls: "text-red-500",
+			cls: "text-status-error",
 		},
-		error: { label: "Error", icon: WifiOff, cls: "text-red-500" },
+		error: { label: "Error", icon: WifiOff, cls: "text-status-error" },
 	}[status];
 
 	const Icon = config.icon;
@@ -23,15 +23,7 @@ export function ConnectionChip({ status }: { status: SocketConnectionStatus }) {
 	return (
 		<div className="flex items-center gap-1.5 text-sm">
 			<Icon className={`w-4 h-4 -mt-1 ${config.cls}`} />
-			<span
-				className={
-					status === "connected"
-						? "text-emerald-500 font-medium"
-						: "text-muted-foreground"
-				}
-			>
-				{config.label}
-			</span>
+			<span className={config.cls}>{config.label}</span>
 		</div>
 	);
 }

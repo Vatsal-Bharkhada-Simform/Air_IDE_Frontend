@@ -49,11 +49,11 @@ export function SessionHeader({
 				</Tooltip>
 
 				<div className="flex items-center gap-1.5">
-					<div className="flex h-5 w-5 items-center justify-center rounded bg-primary text-primary-foreground">
+					<div className="flex h-5 w-5 items-center justify-center rounded bg-signal-blue text-white">
 						<Zap className="h-3 w-3" />
 					</div>
 					<span className="text-md font-bold tracking-tight hidden sm:block">
-						Air IDE
+						Air <span className="text-signal-blue">IDE</span>
 					</span>
 				</div>
 

@@ -68,11 +68,11 @@ export function DashboardPage() {
 				<div className="mx-auto flex h-14 max-w-7xl items-center justify-between px-4 sm:px-6">
 					{/* Brand */}
 					<div className="flex items-center gap-2">
-						<div className="flex h-7 w-7 items-center justify-center rounded-md bg-primary text-primary-foreground">
+						<div className="flex h-7 w-7 items-center justify-center rounded-md bg-signal-blue text-white">
 							<Zap className="h-4 w-4" />
 						</div>
 						<span className="text-lg font-bold tracking-tight">
-							Air IDE
+							Air <span className="text-signal-blue">IDE</span>
 						</span>
 					</div>
 
@@ -100,10 +100,13 @@ export function DashboardPage() {
 				{/* Page title + actions */}
 				<div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
 					<div>
-						<h1 className="text-2xl font-bold tracking-tight">
+						<p className="text-xs font-semibold uppercase tracking-wider text-signal-blue mb-1.5">
+							Workspace
+						</p>
+						<h1 className="text-3xl font-bold tracking-tight">
 							Sessions
 						</h1>
-						<p className="mt-1 text-sm text-muted-foreground">
+						<p className="mt-1.5 text-sm text-muted-foreground">
 							Collaborative rooms you own or have joined.
 						</p>
 					</div>

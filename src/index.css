@@ -39,6 +39,14 @@
 	--color-card: var(--card);
 	--color-foreground: var(--foreground);
 	--color-background: var(--background);
+	/* ── Signal accent ── */
+	--color-signal-blue: var(--signal-blue);
+	--color-signal-violet: var(--signal-violet);
+	--color-signal-cyan: var(--signal-cyan);
+	/* ── Semantic status ── */
+	--color-status-live: var(--status-live);
+	--color-status-warn: var(--status-warn);
+	--color-status-error: var(--status-error);
 	--radius-sm: calc(var(--radius) * 0.6);
 	--radius-md: calc(var(--radius) * 0.8);
 	--radius-lg: var(--radius);
@@ -81,6 +89,14 @@
 	--sidebar-accent-foreground: oklch(0.205 0 0);
 	--sidebar-border: oklch(0.922 0 0);
 	--sidebar-ring: oklch(0.708 0 0);
+	/* ── Signal accent (light-mode — darkened for legibility on light surfaces) ── */
+	--signal-blue: oklch(0.45 0.22 264);
+	--signal-violet: oklch(0.42 0.2 300);
+	--signal-cyan: oklch(0.46 0.18 230);
+	/* ── Semantic status ── */
+	--status-live: oklch(0.5 0.19 145);
+	--status-warn: oklch(0.6 0.18 75);
+	--status-error: oklch(0.577 0.245 27.325);
 }
 
 .dark {
@@ -115,6 +131,14 @@
 	--sidebar-accent-foreground: oklch(0.985 0 0);
 	--sidebar-border: oklch(1 0 0 / 10%);
 	--sidebar-ring: oklch(0.556 0 0);
+	/* ── Signal accent (dark-mode — matches loading screen exactly) ── */
+	--signal-blue: oklch(0.65 0.22 264);
+	--signal-violet: oklch(0.62 0.2 300);
+	--signal-cyan: oklch(0.68 0.18 230);
+	/* ── Semantic status ── */
+	--status-live: oklch(0.72 0.19 145);
+	--status-warn: oklch(0.78 0.18 85);
+	--status-error: oklch(0.704 0.191 22.216);
 }
 
 @layer base {

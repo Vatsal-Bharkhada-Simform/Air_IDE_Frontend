@@ -140,7 +140,7 @@ export function EditorArea({
 
 					{/* Save status bar */}
 					<div className="flex items-center justify-between bg-background backdrop-blur-sm px-3 py-1 border-t border-border">
-						<div className="flex items-center gap-3 text-xs">
+						<div className="flex items-center gap-3 text-xs font-mono">
 							<span>{toMonacoLang(activeFile.language)}</span>
 							<Separator
 								orientation="vertical"
