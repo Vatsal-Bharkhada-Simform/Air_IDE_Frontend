@@ -68,7 +68,7 @@ export function CreateSessionDialog({
 			<DialogContent className="sm:max-w-md">
 				<DialogHeader>
 					<DialogTitle className="flex items-center gap-2">
-						<Zap className="h-5 w-5 text-signal-blue" />
+						<Zap className="h-5 w-5 text-muted-foreground" />
 						Create New Session
 					</DialogTitle>
 					<DialogDescription>

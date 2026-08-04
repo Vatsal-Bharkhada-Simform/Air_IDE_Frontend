@@ -46,7 +46,7 @@ function EmptyState({
 }: EmptyStateProps) {
 	return (
 		<div className="flex flex-col items-center justify-center py-20 text-center gap-4">
-			<div className="flex h-14 w-14 items-center justify-center rounded-xl bg-signal-blue text-white">
+			<div className="flex h-14 w-14 items-center justify-center rounded-xl bg-muted text-foreground">
 				<FileCode2 className="h-7 w-7" />
 			</div>
 			<div className="space-y-1">
@@ -99,7 +99,7 @@ export function SessionTable({
 	}
 
 	return (
-		<div className="rounded-xl border bg-card overflow-hidden">
+		<div className="rounded-xl ring-1 ring-foreground/10 bg-card overflow-hidden">
 			<Table>
 				<TableHeader>
 					<TableRow className="bg-muted/50 hover:bg-muted/50">
@@ -136,7 +136,7 @@ export function SessionTable({
 							<>
 								<TableRow
 									key={session.id}
-									className="group cursor-pointer"
+									className="group cursor-pointer hover:bg-muted"
 									onClick={() =>
 										navigate(
 											`/session/${session.inviteCode}`

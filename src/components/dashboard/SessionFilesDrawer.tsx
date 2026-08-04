@@ -116,7 +116,7 @@ export function SessionFilesDrawer({
 				{files.map((file, idx) => (
 					<div
 						key={file.id}
-						className={`flex items-center gap-3 px-6 py-2.5 hover:bg-muted/50 transition-colors ${
+						className={`flex items-center gap-3 px-6 py-2.5 hover:bg-muted transition-colors ${
 							idx < files.length - 1
 								? "border-b border-border/60"
 								: ""
@@ -148,7 +148,7 @@ export function SessionFilesDrawer({
 						{/* Language badge */}
 						<Badge
 							variant="secondary"
-							className="text-[10px] font-mono px-1.5 py-0 shrink-0"
+							className="text-xs font-mono px-1.5 py-0 shrink-0"
 						>
 							{langLabel(file.language)}
 						</Badge>

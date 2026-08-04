@@ -80,7 +80,7 @@ export function JoinSessionDialog({ open, onClose }: JoinSessionDialogProps) {
 			<DialogContent className="sm:max-w-md">
 				<DialogHeader>
 					<DialogTitle className="flex items-center gap-2">
-						<LogIn className="h-5 w-5 text-signal-blue" />
+						<LogIn className="h-5 w-5 text-muted-foreground" />
 						Join a Session
 					</DialogTitle>
 					<DialogDescription>
