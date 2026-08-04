@@ -1,6 +1,12 @@
 import { useState } from "react";
 import { useNavigate } from "react-router";
-import { Loader2, MoreHorizontal, Trash2, PowerOff, Power } from "lucide-react";
+import {
+	CircleNotch,
+	DotsThreeOutline,
+	Trash,
+	Lightning,
+	LightningSlash,
+} from "@phosphor-icons/react";
 import { useUpdateSessionStatusMutation } from "@/store/api/api";
 import type { SessionDataWithCounts } from "@/types/collabTypes";
 import { Button } from "@/components/ui/button";
@@ -47,9 +53,12 @@ export function SessionRowActions({ session }: SessionRowActionsProps) {
 							disabled={isUpdating}
 						>
 							{isUpdating ? (
-								<Loader2 className="h-4 w-4 animate-spin" />
+								<CircleNotch
+									size={14}
+									className="animate-spin"
+								/>
 							) : (
-								<MoreHorizontal className="h-4 w-4" />
+								<DotsThreeOutline size={14} weight="fill" />
 							)}
 							<span className="sr-only">Session actions</span>
 						</Button>
@@ -70,12 +79,12 @@ export function SessionRowActions({ session }: SessionRowActionsProps) {
 					>
 						{session.isActive ? (
 							<>
-								<PowerOff className="mr-2 h-4 w-4" />
+								<LightningSlash size={14} className="mr-2" />
 								Close Session
 							</>
 						) : (
 							<>
-								<Power className="mr-2 h-4 w-4" />
+								<Lightning size={14} className="mr-2" />
 								Reopen Session
 							</>
 						)}
@@ -85,7 +94,7 @@ export function SessionRowActions({ session }: SessionRowActionsProps) {
 						onClick={() => setDeleteOpen(true)}
 						className="text-destructive focus:text-destructive"
 					>
-						<Trash2 className="mr-2 h-4 w-4" />
+						<Trash size={14} className="mr-2" />
 						Delete Session
 					</DropdownMenuItem>
 				</DropdownMenuContent>

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Check, Copy, Link } from "lucide-react";
+import { Check, Copy, Link } from "@phosphor-icons/react";
 import {
 	Tooltip,
 	TooltipContent,
@@ -35,12 +35,23 @@ export function InviteCodeBadge({ code }: InviteCodeBadgeProps) {
 					render={
 						<button
 							onClick={copyCode}
-							className="flex items-center gap-1.5 rounded-md border border-border bg-muted/60 px-2.5 py-1 text-xs font-mono tracking-wider hover:bg-muted transition-colors"
+							className="flex items-center gap-1.5 rounded px-2.5 py-1 text-[10px] font-mono uppercase tracking-wider transition-all duration-150"
+							style={{
+								background: copiedCode
+									? "oklch(0.72 0.2 145 / 0.08)"
+									: "oklch(1 0 0 / 0.04)",
+								border: copiedCode
+									? "1px solid oklch(0.72 0.2 145 / 0.3)"
+									: "1px solid oklch(1 0 0 / 0.08)",
+								color: copiedCode
+									? "oklch(0.72 0.2 145)"
+									: "oklch(0.70 0.01 270)",
+							}}
 						>
 							{copiedCode ? (
-								<Check className="h-3 w-3 text-emerald-500 shrink-0" />
+								<Check size={10} weight="bold" />
 							) : (
-								<Copy className="h-3 w-3 text-muted-foreground shrink-0" />
+								<Copy size={10} />
 							)}
 							{code}
 						</button>
@@ -58,12 +69,23 @@ export function InviteCodeBadge({ code }: InviteCodeBadgeProps) {
 						<button
 							onClick={copyLink}
 							aria-label="Copy session link"
-							className="flex items-center justify-center rounded-md border border-border bg-muted/60 p-1 hover:bg-muted transition-colors text-muted-foreground hover:text-foreground"
+							className="flex items-center justify-center rounded p-1 transition-all duration-150"
+							style={{
+								background: copiedLink
+									? "oklch(0.72 0.2 145 / 0.08)"
+									: "oklch(1 0 0 / 0.04)",
+								border: copiedLink
+									? "1px solid oklch(0.72 0.2 145 / 0.3)"
+									: "1px solid oklch(1 0 0 / 0.08)",
+								color: copiedLink
+									? "oklch(0.72 0.2 145)"
+									: "oklch(0.50 0.01 270)",
+							}}
 						>
 							{copiedLink ? (
-								<Check className="h-3.5 w-3.5 text-emerald-500" />
+								<Check size={11} weight="bold" />
 							) : (
-								<Link className="h-3.5 w-3.5" />
+								<Link size={11} />
 							)}
 						</button>
 					}

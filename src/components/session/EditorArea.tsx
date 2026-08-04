@@ -1,7 +1,12 @@
 import Editor, { type OnMount } from "@monaco-editor/react";
-import { Clock, FilePlus, FileCode, Save } from "lucide-react";
+import {
+	Clock,
+	FilePlus,
+	FileCode,
+	FloppyDisk,
+	ArrowRight,
+} from "@phosphor-icons/react";
 import { Button } from "@/components/ui/button";
-import { Separator } from "@/components/ui/separator";
 import {
 	Tooltip,
 	TooltipContent,
@@ -10,28 +15,59 @@ import {
 import type { SessionFile } from "@/types/collabTypes";
 import { FileTab } from "./FileTab";
 import { toMonacoLang } from "./helpers";
-import { useTheme } from "@/components/theme-provider";
 
 /* ─── No-file-open placeholder ─────────────────────────────── */
 
 function NoFileOpen({ onNewFileClick }: { onNewFileClick: () => void }) {
 	return (
-		<div className="flex flex-1 flex-col items-center justify-center gap-4 text-muted-foreground">
-			<FileCode className="h-16 w-16" />
-			<div className="text-center">
-				<p className="text-sm font-medium">No file open</p>
-				<p className="text-xs mt-1">
-					Select a file from the sidebar or create a new one.
+		<div className="flex flex-1 flex-col items-center justify-center gap-5">
+			{/* Icon */}
+			<div className="relative">
+				<div
+					className="absolute inset-0 rounded-2xl opacity-15"
+					style={{
+						background: "oklch(0.62 0.24 275)",
+						filter: "blur(16px)",
+					}}
+				/>
+				<div
+					className="relative flex h-14 w-14 items-center justify-center rounded-2xl"
+					style={{
+						background: "oklch(0.14 0.018 270)",
+						border: "1px solid oklch(1 0 0 / 0.07)",
+					}}
+				>
+					<FileCode
+						size={22}
+						weight="light"
+						style={{ color: "oklch(0.50 0.012 270)" }}
+					/>
+				</div>
+			</div>
+			<div className="text-center space-y-1.5">
+				<p
+					className="text-sm font-medium text-[oklch(0.65_0.01_270)] tracking-tight"
+					style={{ fontFamily: "var(--font-display)" }}
+				>
+					No file open
+				</p>
+				<p className="text-xs font-mono text-[oklch(0.42_0.01_270)] uppercase tracking-wider">
+					Select from explorer or create new
 				</p>
 			</div>
 			<Button
 				variant="outline"
 				size="sm"
-				className={"text-foreground"}
 				onClick={onNewFileClick}
+				className="gap-1.5 text-xs"
 			>
-				<FilePlus className="mr-1.5 h-4 w-4" />
-				New File
+				<FilePlus size={13} weight="light" />
+				New file
+				<ArrowRight
+					size={11}
+					weight="bold"
+					className="ml-1 opacity-50"
+				/>
 			</Button>
 		</div>
 	);
@@ -65,18 +101,19 @@ export function EditorArea({
 	lastSavedAt,
 }: EditorAreaProps) {
 	const activeFile = openTabs.find((f) => f.id === activeFileId);
-	const { theme } = useTheme();
-	const editorTheme =
-		theme === "dark" ||
-		(theme === "system" &&
-			window.matchMedia("(prefers-color-scheme: dark)").matches)
-			? "vs-dark"
-			: "light";
+	// Force dark mode for the Monaco editor
+	const editorTheme = "vs-dark";
 
 	return (
 		<div className="flex flex-col flex-1 min-w-0 overflow-hidden">
 			{/* Tab bar */}
-			<div className="h-10 flex items-center border-b border-border bg-muted/30 overflow-x-auto shrink-0">
+			<div
+				className="h-9 flex items-center overflow-x-auto shrink-0"
+				style={{
+					background: "oklch(0.095 0.014 270)",
+					borderBottom: "1px solid oklch(1 0 0 / 0.06)",
+				}}
+			>
 				{openTabs.map((file) => (
 					<FileTab
 						key={file.id}
@@ -94,15 +131,15 @@ export function EditorArea({
 							<Button
 								variant="ghost"
 								size="icon"
-								className="p-2 rounded-full"
+								className="h-7 w-7 rounded-md ml-0.5 shrink-0"
 								onClick={onNewFileClick}
 								id="new-file-btn"
 							>
-								<FilePlus className="h-4 w-4 pointer-events-none" />
+								<FilePlus size={13} weight="light" />
 							</Button>
 						}
 					/>
-					<TooltipContent>Create New File</TooltipContent>
+					<TooltipContent>New file</TooltipContent>
 				</Tooltip>
 			</div>
 
@@ -117,9 +154,9 @@ export function EditorArea({
 							onMount={onEditorMount}
 							theme={editorTheme}
 							options={{
-								fontSize: 14,
+								fontSize: 13,
 								fontFamily:
-									"'JetBrains Mono', 'Fira Code', 'Cascadia Code', monospace",
+									"'JetBrains Mono Variable', 'JetBrains Mono', ui-monospace, monospace",
 								fontLigatures: true,
 								minimap: { enabled: true },
 								scrollBeyondLastLine: false,
@@ -132,27 +169,44 @@ export function EditorArea({
 								cursorSmoothCaretAnimation: "on",
 								padding: { top: 12 },
 								automaticLayout: true,
-								// Required for remote-cursor user-initial badges in the gutter
 								glyphMargin: true,
+								overviewRulerBorder: false,
+								scrollbar: {
+									verticalScrollbarSize: 6,
+									horizontalScrollbarSize: 6,
+								},
 							}}
 						/>
 					</div>
 
 					{/* Save status bar */}
-					<div className="flex items-center justify-between bg-background backdrop-blur-sm px-3 py-1 border-t border-border">
-						<div className="flex items-center gap-3 text-xs font-mono">
-							<span>{toMonacoLang(activeFile.language)}</span>
-							<Separator
-								orientation="vertical"
-								className="bg-white/20"
-							/>
-							<span>{activeFile.filename}</span>
+					<div
+						className="flex items-center justify-between px-3 py-1 shrink-0"
+						style={{
+							background: "oklch(0.08 0.012 270)",
+							borderTop: "1px solid oklch(1 0 0 / 0.05)",
+						}}
+					>
+						<div className="flex items-center gap-3 text-[10px] font-mono">
+							<span
+								className="px-1.5 py-0.5 rounded text-[10px] uppercase tracking-wider"
+								style={{
+									background: "oklch(0.62 0.24 275 / 0.1)",
+									border: "1px solid oklch(0.62 0.24 275 / 0.2)",
+									color: "oklch(0.62 0.24 275)",
+								}}
+							>
+								{toMonacoLang(activeFile.language)}
+							</span>
+							<span className="text-[oklch(0.42_0.01_270)] uppercase tracking-wider">
+								{activeFile.filename}
+							</span>
 						</div>
 						<div className="flex items-center gap-3">
 							{lastSavedAt && (
-								<span className="flex items-center gap-1 text-xs">
-									<Clock className="h-3 w-3" />
-									Saved by {lastSavedBy} ·{" "}
+								<span className="flex items-center gap-1 text-[10px] font-mono text-[oklch(0.42_0.01_270)]">
+									<Clock size={10} />
+									{lastSavedBy} ·{" "}
 									{new Date(lastSavedAt).toLocaleTimeString()}
 								</span>
 							)}
@@ -162,11 +216,11 @@ export function EditorArea({
 										<Button
 											variant="ghost"
 											size="sm"
-											className="h-6 gap-1.5 px-2 text-xs"
+											className="h-5 gap-1 px-2 text-[10px] font-mono uppercase tracking-wider"
 											onClick={onSave}
 											id="save-file-btn"
 										>
-											<Save className="h-3 w-3" />
+											<FloppyDisk size={11} />
 											Save
 										</Button>
 									}

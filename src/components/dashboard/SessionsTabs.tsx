@@ -1,4 +1,4 @@
-import { Loader2 } from "lucide-react";
+import { CircleNotch } from "@phosphor-icons/react";
 import {
 	useListMySessionsQuery,
 	useListJoinedSessionsQuery,
@@ -31,9 +31,11 @@ export function SessionsTabs({ onCreateClick }: SessionsTabsProps) {
 
 	if (myLoading || joinedLoading) {
 		return (
-			<div className="flex items-center justify-center py-20 gap-2 text-muted-foreground">
-				<Loader2 className="h-5 w-5 animate-spin" />
-				<span>Loading sessions…</span>
+			<div className="flex items-center justify-center py-20 gap-2 text-[oklch(0.45_0.01_270)]">
+				<CircleNotch size={16} className="animate-spin" />
+				<span className="text-xs font-mono uppercase tracking-wider">
+					Loading sessions…
+				</span>
 			</div>
 		);
 	}

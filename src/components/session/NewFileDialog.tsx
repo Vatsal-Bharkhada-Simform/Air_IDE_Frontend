@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { FilePlus, Loader2 } from "lucide-react";
+import { FilePlus, CircleNotch } from "@phosphor-icons/react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -57,7 +57,10 @@ export function NewFileDialog({
 			<DialogContent className="sm:max-w-sm">
 				<DialogHeader>
 					<DialogTitle className="flex items-center gap-2">
-						<FilePlus className="h-5 w-5 text-signal-blue" />
+						<FilePlus
+							size={16}
+							style={{ color: "oklch(0.62 0.24 275)" }}
+						/>
 						New File
 					</DialogTitle>
 					<DialogDescription>
@@ -101,7 +104,10 @@ export function NewFileDialog({
 						>
 							{isCreating ? (
 								<>
-									<Loader2 className="mr-2 h-4 w-4 animate-spin" />
+									<CircleNotch
+										size={14}
+										className="mr-2 animate-spin"
+									/>
 									Creating…
 								</>
 							) : (

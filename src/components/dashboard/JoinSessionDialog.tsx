@@ -3,7 +3,7 @@ import { useNavigate } from "react-router";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import { LogIn, Loader2 } from "lucide-react";
+import { ArrowRight, CircleNotch } from "@phosphor-icons/react";
 import { useGetSessionQuery } from "@/store/api/api";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -79,8 +79,11 @@ export function JoinSessionDialog({ open, onClose }: JoinSessionDialogProps) {
 		<Dialog open={open} onOpenChange={(v) => !v && handleClose()}>
 			<DialogContent className="sm:max-w-md">
 				<DialogHeader>
-					<DialogTitle className="flex items-center gap-2">
-						<LogIn className="h-5 w-5 text-muted-foreground" />
+					<DialogTitle className="flex items-center gap-2 text-base font-semibold tracking-tight">
+						<ArrowRight
+							size={16}
+							style={{ color: "oklch(0.62 0.24 275)" }}
+						/>
 						Join a Session
 					</DialogTitle>
 					<DialogDescription>
@@ -126,7 +129,10 @@ export function JoinSessionDialog({ open, onClose }: JoinSessionDialogProps) {
 						>
 							{isFetching ? (
 								<>
-									<Loader2 className="mr-2 h-4 w-4 animate-spin" />
+									<CircleNotch
+										size={14}
+										className="mr-2 animate-spin"
+									/>
 									Joining…
 								</>
 							) : (

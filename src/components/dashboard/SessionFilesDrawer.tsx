@@ -1,11 +1,11 @@
 import { useState } from "react";
 import {
-	FileCode2,
-	Download,
-	Trash2,
-	Loader2,
-	AlertCircle,
-} from "lucide-react";
+	FileCode,
+	DownloadSimple,
+	Trash,
+	CircleNotch,
+	WarningCircle,
+} from "@phosphor-icons/react";
 import { useListFilesQuery, useLazyGetFileQuery } from "@/store/api/api";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -83,8 +83,8 @@ export function SessionFilesDrawer({
 
 	if (isLoading) {
 		return (
-			<div className="flex items-center gap-2 py-4 px-4 text-sm text-muted-foreground">
-				<Loader2 className="h-3.5 w-3.5 animate-spin" />
+			<div className="flex items-center gap-2 py-4 px-4 text-xs font-mono text-[oklch(0.45_0.01_270)]">
+				<CircleNotch size={13} className="animate-spin" />
 				Loading files…
 			</div>
 		);
@@ -92,8 +92,11 @@ export function SessionFilesDrawer({
 
 	if (isError) {
 		return (
-			<div className="flex items-center gap-2 py-4 px-4 text-sm text-destructive">
-				<AlertCircle className="h-3.5 w-3.5" />
+			<div
+				className="flex items-center gap-2 py-4 px-4 text-xs font-mono"
+				style={{ color: "oklch(0.65 0.22 22)" }}
+			>
+				<WarningCircle size={13} />
 				Failed to load files.
 			</div>
 		);
@@ -103,8 +106,8 @@ export function SessionFilesDrawer({
 
 	if (files.length === 0) {
 		return (
-			<div className="flex items-center gap-2 py-4 px-4 text-sm text-muted-foreground">
-				<FileCode2 className="h-3.5 w-3.5" />
+			<div className="flex items-center gap-2 py-4 px-4 text-xs font-mono text-[oklch(0.45_0.01_270)]">
+				<FileCode size={13} weight="light" />
 				No files in this session yet.
 			</div>
 		);
@@ -123,7 +126,11 @@ export function SessionFilesDrawer({
 						}`}
 					>
 						{/* Icon */}
-						<FileCode2 className="h-4 w-4 text-muted-foreground shrink-0" />
+						<FileCode
+							size={14}
+							weight="light"
+							className="text-muted-foreground shrink-0"
+						/>
 
 						{/* Filename — inline rename for owners, plain label for participants */}
 						<div className="flex-1 min-w-0">
@@ -173,9 +180,12 @@ export function SessionFilesDrawer({
 											id={`download-file-${file.id}`}
 										>
 											{downloading === file.id ? (
-												<Loader2 className="h-3.5 w-3.5 animate-spin" />
+												<CircleNotch
+													size={13}
+													className="animate-spin"
+												/>
 											) : (
-												<Download className="h-3.5 w-3.5" />
+												<DownloadSimple size={13} />
 											)}
 										</Button>
 									}
@@ -200,7 +210,10 @@ export function SessionFilesDrawer({
 												}
 												id={`delete-file-${file.id}`}
 											>
-												<Trash2 className="h-3.5 w-3.5" />
+												<Trash
+													size={13}
+													weight="light"
+												/>
 											</Button>
 										}
 									/>

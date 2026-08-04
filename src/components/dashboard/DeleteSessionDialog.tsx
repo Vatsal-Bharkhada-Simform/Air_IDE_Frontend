@@ -1,4 +1,4 @@
-import { Loader2, Trash2 } from "lucide-react";
+import { CircleNotch, Trash } from "@phosphor-icons/react";
 import { useDeleteSessionMutation } from "@/store/api/api";
 import type { SessionDataWithCounts } from "@/types/collabTypes";
 import {
@@ -59,12 +59,15 @@ export function DeleteSessionDialog({
 					>
 						{isLoading ? (
 							<>
-								<Loader2 className="mr-2 h-4 w-4 animate-spin" />
+								<CircleNotch
+									size={14}
+									className="mr-2 animate-spin"
+								/>
 								Deleting…
 							</>
 						) : (
 							<>
-								<Trash2 className="mr-2 h-4 w-4" />
+								<Trash size={14} className="mr-2" />
 								Delete Session
 							</>
 						)}

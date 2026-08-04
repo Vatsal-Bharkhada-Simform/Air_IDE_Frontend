@@ -1,4 +1,4 @@
-import { Circle, FileCode, X } from "lucide-react";
+import { Circle, FileCode, X } from "@phosphor-icons/react";
 import type { SessionFile } from "@/types/collabTypes";
 
 export interface FileTabProps {
@@ -19,26 +19,37 @@ export function FileTab({
 	return (
 		<div
 			className={`
-				group flex items-center gap-1.5 px-3 py-2 border-r border-border
-				text-sm cursor-pointer select-none whitespace-nowrap transition-colors
-				border-b-2
-				${
-					isActive
-						? "bg-background text-foreground border-b-signal-blue"
-						: "bg-muted/40 text-muted-foreground hover:bg-muted/80 hover:text-foreground border-b-transparent"
-				}
-			`}
+			group flex items-center gap-1.5 px-3 py-2 border-r
+			cursor-pointer select-none whitespace-nowrap transition-all duration-100
+			border-b-2
+			${
+				isActive
+					? "border-b-[oklch(0.62_0.24_275)] text-[oklch(0.88_0.008_270)]"
+					: "border-b-transparent text-[oklch(0.50_0.01_270)] hover:text-[oklch(0.72_0.008_270)]"
+			}
+		`}
+			style={{
+				background: isActive ? "oklch(0.087 0.018 270)" : "transparent",
+				borderRightColor: "oklch(1 0 0 / 0.06)",
+			}}
 			onClick={onClick}
 		>
-			<FileCode className="h-3.5 w-3.5 shrink-0" />
-			<span className="max-w-[120px] truncate">{file.filename}</span>
+			<FileCode
+				size={12}
+				weight="light"
+				className="shrink-0"
+				style={{ color: isActive ? "oklch(0.62 0.24 275)" : undefined }}
+			/>
+			<span className="max-w-[120px] truncate text-xs font-mono">
+				{file.filename}
+			</span>
 			{/* Dirty indicator or close button */}
 			<button
 				className={`
-					ml-0.5 h-4 w-4 rounded flex items-center justify-center shrink-0
-					transition-opacity hover:bg-muted
-					${isDirty ? "opacity-100" : "opacity-0 group-hover:opacity-100"}
-				`}
+				ml-0.5 h-3.5 w-3.5 rounded flex items-center justify-center shrink-0
+				transition-opacity hover:bg-[oklch(1_0_0/0.08)]
+				${isDirty ? "opacity-100" : "opacity-0 group-hover:opacity-100"}
+			`}
 				onClick={(e) => {
 					e.stopPropagation();
 					onClose();
@@ -48,9 +59,13 @@ export function FileTab({
 				}
 			>
 				{isDirty ? (
-					<Circle className="h-2 w-2 fill-current text-status-warn" />
+					<Circle
+						size={6}
+						weight="fill"
+						style={{ color: "oklch(0.78 0.18 85)" }}
+					/>
 				) : (
-					<X className="h-3 w-3" />
+					<X size={10} weight="bold" />
 				)}
 			</button>
 		</div>

@@ -1,16 +1,16 @@
 import { useState } from "react";
 import { useNavigate } from "react-router";
 import {
-	FileCode2,
+	FileCode,
 	Users,
-	Calendar,
+	CalendarDots,
 	Plus,
-	ChevronDown,
-	ChevronRight,
-} from "lucide-react";
+	CaretDown,
+	CaretRight,
+	ArrowRight,
+} from "@phosphor-icons/react";
 import type { SessionDataWithCounts } from "@/types/collabTypes";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import {
 	Table,
 	TableBody,
@@ -41,24 +41,54 @@ interface EmptyStateProps {
 function EmptyState({
 	onCreateClick,
 	label = "No sessions yet",
-	description = "Create your first session to start collaborating or join one with an invite code.",
+	description = "Create a session or join one with an invite code.",
 	showCreate = true,
 }: EmptyStateProps) {
 	return (
-		<div className="flex flex-col items-center justify-center py-20 text-center gap-4">
-			<div className="flex h-14 w-14 items-center justify-center rounded-xl bg-muted text-foreground">
-				<FileCode2 className="h-7 w-7" />
+		<div className="flex flex-col items-center justify-center py-24 text-center gap-6 animate-fade-up">
+			{/* Icon with glow */}
+			<div className="relative">
+				<div
+					className="absolute inset-0 rounded-xl opacity-20"
+					style={{
+						background: "oklch(0.62 0.24 275)",
+						filter: "blur(16px)",
+					}}
+				/>
+				<div
+					className="relative flex h-14 w-14 items-center justify-center rounded-xl"
+					style={{
+						background: "oklch(0.14 0.018 270)",
+						border: "1px solid oklch(1 0 0 / 0.08)",
+						boxShadow: "inset 0 1px 0 oklch(1 0 0 / 0.06)",
+					}}
+				>
+					<FileCode
+						size={24}
+						weight="light"
+						className="text-[oklch(0.56_0.012_270)]"
+					/>
+				</div>
 			</div>
-			<div className="space-y-1">
-				<h3 className="font-semibold text-lg">{label}</h3>
-				<p className="text-sm text-muted-foreground max-w-xs">
+			<div className="space-y-1.5">
+				<h3
+					className="font-semibold text-base text-[oklch(0.85_0.008_270)] tracking-tight"
+					style={{ fontFamily: "var(--font-display)" }}
+				>
+					{label}
+				</h3>
+				<p className="text-sm text-[oklch(0.50_0.01_270)] max-w-xs">
 					{description}
 				</p>
 			</div>
 			{showCreate && (
-				<Button onClick={onCreateClick} id="empty-state-create-btn">
-					<Plus className="mr-1.5 h-4 w-4" />
-					Create Session
+				<Button
+					onClick={onCreateClick}
+					id="empty-state-create-btn"
+					className="gap-2"
+				>
+					<Plus size={15} weight="bold" />
+					New session
 				</Button>
 			)}
 		</div>
@@ -99,34 +129,49 @@ export function SessionTable({
 	}
 
 	return (
-		<div className="rounded-xl ring-1 ring-foreground/10 bg-card overflow-hidden">
+		<div
+			className="rounded-xl overflow-hidden"
+			style={{
+				background: "oklch(0.12 0.016 270 / 0.7)",
+				border: "1px solid oklch(1 0 0 / 0.07)",
+				boxShadow:
+					"inset 0 1px 0 oklch(1 0 0 / 0.05), 0 4px 24px oklch(0 0 0 / 0.3)",
+			}}
+		>
 			<Table>
 				<TableHeader>
-					<TableRow className="bg-muted/50 hover:bg-muted/50">
-						<TableHead className="font-semibold">Name</TableHead>
-						<TableHead className="font-semibold">
+					<TableRow
+						className="border-b border-[oklch(1_0_0/0.06)]"
+						style={{ background: "oklch(1 0 0 / 0.02)" }}
+					>
+						<TableHead className="text-[10px] font-mono uppercase tracking-[0.12em] text-[oklch(0.45_0.01_270)] font-normal h-10">
+							Session Name
+						</TableHead>
+						<TableHead className="text-[10px] font-mono uppercase tracking-[0.12em] text-[oklch(0.45_0.01_270)] font-normal h-10">
 							Invite Code
 						</TableHead>
-						<TableHead className="font-semibold">Status</TableHead>
-						<TableHead className="font-semibold">
+						<TableHead className="text-[10px] font-mono uppercase tracking-[0.12em] text-[oklch(0.45_0.01_270)] font-normal h-10">
+							Status
+						</TableHead>
+						<TableHead className="text-[10px] font-mono uppercase tracking-[0.12em] text-[oklch(0.45_0.01_270)] font-normal h-10">
 							<span className="flex items-center gap-1.5">
-								<FileCode2 className="h-3.5 w-3.5" />
+								<FileCode size={11} weight="light" />
 								Files
 							</span>
 						</TableHead>
-						<TableHead className="font-semibold">
+						<TableHead className="text-[10px] font-mono uppercase tracking-[0.12em] text-[oklch(0.45_0.01_270)] font-normal h-10">
 							<span className="flex items-center gap-1.5">
-								<Users className="h-3.5 w-3.5" />
+								<Users size={11} weight="light" />
 								Members
 							</span>
 						</TableHead>
-						<TableHead className="font-semibold">
+						<TableHead className="text-[10px] font-mono uppercase tracking-[0.12em] text-[oklch(0.45_0.01_270)] font-normal h-10">
 							<span className="flex items-center gap-1.5">
-								<Calendar className="h-3.5 w-3.5" />
+								<CalendarDots size={11} weight="light" />
 								Created
 							</span>
 						</TableHead>
-						<TableHead />
+						<TableHead className="w-10 h-10" />
 					</TableRow>
 				</TableHeader>
 				<TableBody>
@@ -136,52 +181,86 @@ export function SessionTable({
 							<>
 								<TableRow
 									key={session.id}
-									className="group cursor-pointer hover:bg-muted"
+									className="group cursor-pointer border-b border-[oklch(1_0_0/0.04)] transition-colors duration-100 hover:bg-[oklch(1_0_0/0.025)]"
+									style={{
+										borderLeft: "2px solid transparent",
+									}}
+									onMouseEnter={(e) => {
+										(
+											e.currentTarget as HTMLTableRowElement
+										).style.borderLeftColor =
+											"oklch(0.62 0.24 275 / 0.4)";
+									}}
+									onMouseLeave={(e) => {
+										(
+											e.currentTarget as HTMLTableRowElement
+										).style.borderLeftColor = "transparent";
+									}}
 									onClick={() =>
 										navigate(
 											`/session/${session.inviteCode}`
 										)
 									}
 								>
-									<TableCell className="font-medium max-w-[200px]">
+									<TableCell className="font-medium max-w-[200px] py-3">
 										<span
-											className="block truncate"
+											className="block truncate text-sm text-[oklch(0.88_0.008_270)] tracking-tight"
+											style={{
+												fontFamily:
+													"var(--font-display)",
+											}}
 											title={session.name}
 										>
 											{session.name}
 										</span>
 									</TableCell>
 									<TableCell
+										className="py-3"
 										onClick={(e) => e.stopPropagation()}
 									>
 										<InviteCodeCell
 											code={session.inviteCode}
 										/>
 									</TableCell>
-									<TableCell>
+									<TableCell className="py-3">
 										{session.isActive ? (
-											<Badge
-												variant="default"
-												className="bg-status-live/15 text-status-live border-status-live/30 hover:bg-status-live/20"
+											<span
+												className="inline-flex items-center gap-1.5 text-[10px] font-mono uppercase tracking-wider px-2 py-1 rounded"
+												style={{
+													background:
+														"oklch(0.72 0.2 145 / 0.1)",
+													border: "1px solid oklch(0.72 0.2 145 / 0.25)",
+													color: "oklch(0.72 0.2 145)",
+												}}
 											>
+												<span className="h-1.5 w-1.5 rounded-full bg-[oklch(0.72_0.2_145)] animate-live-pulse shrink-0" />
 												Active
-											</Badge>
+											</span>
 										) : (
-											<Badge variant="secondary">
-												Inactive
-											</Badge>
+											<span
+												className="inline-flex items-center text-[10px] font-mono uppercase tracking-wider px-2 py-1 rounded"
+												style={{
+													background:
+														"oklch(1 0 0 / 0.04)",
+													border: "1px solid oklch(1 0 0 / 0.08)",
+													color: "oklch(0.42 0.01 270)",
+												}}
+											>
+												Idle
+											</span>
 										)}
 									</TableCell>
 
-									{/* Files column — chevron toggle */}
+									{/* Files column — expand toggle */}
 									<TableCell
+										className="py-3"
 										onClick={(e) => e.stopPropagation()}
 									>
 										<button
 											onClick={() =>
 												toggleExpand(session.id)
 											}
-											className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
+											className="flex items-center gap-1.5 text-xs font-mono text-[oklch(0.50_0.01_270)] hover:text-[oklch(0.80_0.008_270)] transition-colors"
 											aria-label={
 												isExpanded
 													? "Collapse files"
@@ -190,21 +269,30 @@ export function SessionTable({
 											id={`toggle-files-${session.id}`}
 										>
 											{isExpanded ? (
-												<ChevronDown className="h-3.5 w-3.5" />
+												<CaretDown
+													size={11}
+													weight="bold"
+												/>
 											) : (
-												<ChevronRight className="h-3.5 w-3.5" />
+												<CaretRight
+													size={11}
+													weight="bold"
+												/>
 											)}
-											{session._count.files}
+											<span className="tabular-nums">
+												{session._count.files}
+											</span>
 										</button>
 									</TableCell>
 
-									<TableCell className="text-muted-foreground">
+									<TableCell className="py-3 text-xs font-mono text-[oklch(0.50_0.01_270)] tabular-nums">
 										{session._count.participants}
 									</TableCell>
-									<TableCell className="text-muted-foreground text-sm">
+									<TableCell className="py-3 text-xs font-mono text-[oklch(0.50_0.01_270)]">
 										{formatDate(session.createdAt)}
 									</TableCell>
 									<TableCell
+										className="py-3"
 										onClick={(e) => e.stopPropagation()}
 									>
 										{isOwner ? (
@@ -215,14 +303,18 @@ export function SessionTable({
 											<Button
 												variant="ghost"
 												size="sm"
-												className="opacity-0 group-hover:opacity-100 transition-opacity"
+												className="opacity-0 group-hover:opacity-100 transition-opacity gap-1 text-xs"
 												onClick={() =>
 													navigate(
 														`/session/${session.inviteCode}`
 													)
 												}
 											>
-												Open →
+												Open
+												<ArrowRight
+													size={11}
+													weight="bold"
+												/>
 											</Button>
 										)}
 									</TableCell>

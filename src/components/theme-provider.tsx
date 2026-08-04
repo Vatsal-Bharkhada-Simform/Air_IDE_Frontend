@@ -1,4 +1,9 @@
-import { createContext, useContext, useEffect, useState } from "react";
+import { createContext, useContext, useEffect } from "react";
+
+// ── Dark-only mode ──────────────────────────────────────────────
+// Option B approved: this app is dark-native. The ThemeProvider now
+// always enforces dark mode on mount and exposes a no-op setTheme
+// for backward compatibility with existing call sites.
 
 type Theme = "dark" | "light" | "system";
 
@@ -14,46 +19,24 @@ type ThemeProviderState = {
 };
 
 const initialState: ThemeProviderState = {
-	theme: "system",
+	theme: "dark",
 	setTheme: () => null,
 };
 
 const ThemeProviderContext = createContext<ThemeProviderState>(initialState);
 
-export function ThemeProvider({
-	children,
-	defaultTheme = "system",
-	storageKey = "vite-ui-theme",
-	...props
-}: ThemeProviderProps) {
-	const [theme, setTheme] = useState<Theme>(
-		() => (localStorage.getItem(storageKey) as Theme) || defaultTheme
-	);
-
+export function ThemeProvider({ children, ...props }: ThemeProviderProps) {
+	// Lock to dark unconditionally
 	useEffect(() => {
 		const root = window.document.documentElement;
+		root.classList.remove("light");
+		root.classList.add("dark");
+	}, []);
 
-		root.classList.remove("light", "dark");
-
-		if (theme === "system") {
-			const systemTheme = window.matchMedia(
-				"(prefers-color-scheme: dark)"
-			).matches
-				? "dark"
-				: "light";
-
-			root.classList.add(systemTheme);
-			return;
-		}
-
-		root.classList.add(theme);
-	}, [theme]);
-
-	const value = {
-		theme,
-		setTheme: (theme: Theme) => {
-			localStorage.setItem(storageKey, theme);
-			setTheme(theme);
+	const value: ThemeProviderState = {
+		theme: "dark",
+		setTheme: () => {
+			// No-op: dark-only mode. Light mode is not supported in this design.
 		},
 	};
 

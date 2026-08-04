@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Pencil, Loader2 } from "lucide-react";
+import { PencilSimple, CircleNotch } from "@phosphor-icons/react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -74,7 +74,10 @@ export function RenameFileDialog({
 			<DialogContent className="sm:max-w-sm">
 				<DialogHeader>
 					<DialogTitle className="flex items-center gap-2">
-						<Pencil className="h-5 w-5 text-signal-blue" />
+						<PencilSimple
+							size={16}
+							style={{ color: "oklch(0.62 0.24 275)" }}
+						/>
 						Rename File
 					</DialogTitle>
 					<DialogDescription>
@@ -120,12 +123,15 @@ export function RenameFileDialog({
 						>
 							{isRenaming ? (
 								<>
-									<Loader2 className="mr-2 h-4 w-4 animate-spin" />
+									<CircleNotch
+										size={14}
+										className="mr-2 animate-spin"
+									/>
 									Renaming…
 								</>
 							) : (
 								<>
-									<Pencil className="mr-2 h-4 w-4" />
+									<PencilSimple size={14} className="mr-2" />
 									Rename
 								</>
 							)}

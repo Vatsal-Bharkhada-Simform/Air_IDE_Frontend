@@ -1,4 +1,4 @@
-import { Pencil, Trash2, FileCode } from "lucide-react";
+import { PencilSimple, Trash, FileCode } from "@phosphor-icons/react";
 import {
 	Tooltip,
 	TooltipContent,
@@ -25,16 +25,28 @@ export function FilesPanel({
 	onDeleteClick,
 }: FilesPanelProps) {
 	return (
-		<div className="flex flex-col w-48 border-r border-border bg-card/50 shrink-0">
-			<div className="flex h-10 items-center border-b border-border px-3">
-				<span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+		<div
+			className="flex flex-col w-44 shrink-0"
+			style={{
+				borderRight: "1px solid oklch(1 0 0 / 0.06)",
+				background: "oklch(0.10 0.014 270)",
+			}}
+		>
+			{/* Header */}
+			<div
+				className="flex h-9 items-center px-3"
+				style={{ borderBottom: "1px solid oklch(1 0 0 / 0.05)" }}
+			>
+				<span className="text-[10px] font-mono uppercase tracking-wider text-[oklch(0.42_0.01_270)]">
 					Explorer
 				</span>
 			</div>
+
+			{/* File list */}
 			<div className="flex-1 overflow-y-auto py-1">
 				{files.length === 0 ? (
-					<p className="px-3 py-4 text-xs text-muted-foreground text-center">
-						No files yet.
+					<p className="px-3 py-4 text-[10px] font-mono uppercase tracking-wider text-[oklch(0.40_0.01_270)] text-center">
+						No files
 					</p>
 				) : (
 					files.map((file) => {
@@ -45,32 +57,51 @@ export function FilesPanel({
 						return (
 							<div
 								key={file.id}
-								className={`
-								group relative flex items-center gap-1.5 px-2 py-1.5
-								transition-colors hover:bg-muted
-								${isActive ? "bg-muted text-foreground border-l-2 border-l-signal-blue pl-[6px]" : "text-muted-foreground border-l-2 border-l-transparent"}
-							`}
+								className="group relative flex items-center gap-1 px-2 py-1 transition-colors duration-100"
+								style={{
+									borderLeft: `2px solid ${isActive ? "oklch(0.62 0.24 275)" : "transparent"}`,
+									background: isActive
+										? "oklch(0.62 0.24 275 / 0.07)"
+										: undefined,
+									paddingLeft: "6px",
+								}}
 							>
 								{/* File click area */}
 								<button
-									className="flex flex-1 items-center gap-2 min-w-0 text-left"
+									className="flex flex-1 items-center gap-1.5 min-w-0 text-left"
 									onClick={() => onFileClick(file)}
 								>
-									<FileCode className="h-3.5 w-3.5 shrink-0" />
-									<span className="flex-1 truncate text-sm">
+									<FileCode
+										size={12}
+										weight="light"
+										className="shrink-0"
+										style={{
+											color: isActive
+												? "oklch(0.62 0.24 275)"
+												: "oklch(0.45 0.01 270)",
+										}}
+									/>
+									<span
+										className="flex-1 truncate text-xs font-mono"
+										style={{
+											color: isActive
+												? "oklch(0.88 0.008 270)"
+												: "oklch(0.65 0.01 270)",
+										}}
+									>
 										{file.filename}
 									</span>
 								</button>
 
-								{/* Live viewers avatars — hidden when actions are visible */}
+								{/* Live viewer avatars — hide on hover */}
 								{viewers.length > 0 && (
-									<div className="flex -space-x-1 group-hover:hidden">
-										{viewers.slice(0, 3).map((v) => (
+									<div className="flex -space-x-1 group-hover:hidden shrink-0">
+										{viewers.slice(0, 2).map((v) => (
 											<Tooltip key={v.userId}>
 												<TooltipTrigger
 													render={
 														<span
-															className="h-4 w-4 rounded-full border border-card text-[9px] flex items-center justify-center font-bold text-white"
+															className="h-3.5 w-3.5 rounded border border-[oklch(0.10_0.014_270)] text-[8px] flex items-center justify-center font-bold text-white"
 															style={{
 																backgroundColor:
 																	v.color,
@@ -90,21 +121,24 @@ export function FilesPanel({
 									</div>
 								)}
 
-								{/* Action buttons — shown on row hover */}
+								{/* Action buttons on hover */}
 								<div className="hidden group-hover:flex items-center gap-0.5 shrink-0">
 									<Tooltip>
 										<TooltipTrigger
 											render={
 												<button
 													id={`rename-file-${file.id}`}
-													className="rounded p-0.5 text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
+													className="rounded p-0.5 transition-colors text-[oklch(0.45_0.01_270)] hover:text-[oklch(0.80_0.008_270)] hover:bg-[oklch(1_0_0/0.06)]"
 													onClick={(e) => {
 														e.stopPropagation();
 														onRenameClick(file);
 													}}
 													aria-label={`Rename ${file.filename}`}
 												>
-													<Pencil className="h-3.5 w-3.5" />
+													<PencilSimple
+														size={11}
+														weight="light"
+													/>
 												</button>
 											}
 										/>
@@ -118,14 +152,17 @@ export function FilesPanel({
 											render={
 												<button
 													id={`delete-file-${file.id}`}
-													className="rounded p-0.5 text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
+													className="rounded p-0.5 transition-colors text-[oklch(0.45_0.01_270)] hover:text-[oklch(0.65_0.22_22)] hover:bg-[oklch(0.65_0.22_22/0.08)]"
 													onClick={(e) => {
 														e.stopPropagation();
 														onDeleteClick(file);
 													}}
 													aria-label={`Delete ${file.filename}`}
 												>
-													<Trash2 className="h-3.5 w-3.5" />
+													<Trash
+														size={11}
+														weight="light"
+													/>
 												</button>
 											}
 										/>

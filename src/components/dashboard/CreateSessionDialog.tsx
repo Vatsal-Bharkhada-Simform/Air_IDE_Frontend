@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import { Zap, Loader2 } from "lucide-react";
+import { Plus, CircleNotch } from "@phosphor-icons/react";
 import { useCreateSessionMutation } from "@/store/api/api";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -67,8 +67,11 @@ export function CreateSessionDialog({
 		<Dialog open={open} onOpenChange={(v) => !v && handleClose()}>
 			<DialogContent className="sm:max-w-md">
 				<DialogHeader>
-					<DialogTitle className="flex items-center gap-2">
-						<Zap className="h-5 w-5 text-muted-foreground" />
+					<DialogTitle className="flex items-center gap-2 text-base font-semibold tracking-tight">
+						<Plus
+							size={16}
+							style={{ color: "oklch(0.62 0.24 275)" }}
+						/>
 						Create New Session
 					</DialogTitle>
 					<DialogDescription>
@@ -78,15 +81,20 @@ export function CreateSessionDialog({
 				</DialogHeader>
 
 				<form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-					<div className="space-y-2">
-						<Label htmlFor="session-name">Session Name</Label>
+					<div className="space-y-1.5">
+						<Label
+							htmlFor="session-name"
+							className="text-xs font-mono uppercase tracking-wider text-[oklch(0.56_0.012_270)]"
+						>
+							Session Name
+						</Label>
 						<Input
 							id="session-name"
 							placeholder="e.g. Backend Refactor Sprint"
 							{...register("name")}
 						/>
 						{errors.name && (
-							<p className="text-sm text-destructive">
+							<p className="text-xs font-mono text-[oklch(0.65_0.22_22)]">
 								{errors.name.message}
 							</p>
 						)}
@@ -113,7 +121,10 @@ export function CreateSessionDialog({
 						>
 							{isLoading ? (
 								<>
-									<Loader2 className="mr-2 h-4 w-4 animate-spin" />
+									<CircleNotch
+										size={14}
+										className="mr-2 animate-spin"
+									/>
 									Creating…
 								</>
 							) : (

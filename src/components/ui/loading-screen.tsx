@@ -260,7 +260,7 @@ export function LoadingScreen() {
           letter-spacing: 0.08em;
           color: oklch(0.5 0 0);
           text-transform: uppercase;
-          font-family: 'JetBrains Mono', 'Fira Code', monospace;
+          font-family: 'JetBrains Mono Variable', 'JetBrains Mono', ui-monospace, monospace;
         }
         .terminal-body {
           padding: 14px 16px;
@@ -273,7 +273,7 @@ export function LoadingScreen() {
           align-items: baseline;
           gap: 8px;
           font-size: 0.82rem;
-          font-family: 'JetBrains Mono', 'Fira Code', monospace;
+          font-family: 'JetBrains Mono Variable', 'JetBrains Mono', ui-monospace, monospace;
           transition: opacity 0.3s, color 0.3s;
         }
         .line-pending {

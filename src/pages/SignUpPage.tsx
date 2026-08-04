@@ -3,7 +3,15 @@ import { Link, useLocation, useNavigate } from "react-router";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import { Eye, EyeOff, Loader2, Check, X } from "lucide-react";
+import {
+	Eye,
+	EyeSlash,
+	CircleNotch,
+	ArrowRight,
+	Check,
+	X,
+	Code,
+} from "@phosphor-icons/react";
 
 import { useSignupUserMutation } from "../store/api/api";
 import { useApiDispatch } from "../store/store";
@@ -11,16 +19,8 @@ import { setToken } from "../store/slices/authSlice";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
 import { Label } from "../components/ui/label";
-import {
-	Card,
-	CardContent,
-	CardDescription,
-	CardFooter,
-	CardHeader,
-	CardTitle,
-} from "../components/ui/card";
 
-// ── Schema mirrors auth.validator.js signupRules exactly ──────────────────────
+// ── Schema ──────────────────────────────────────────────────────────────────
 
 const signupSchema = z.object({
 	username: z
@@ -50,8 +50,6 @@ const signupSchema = z.object({
 
 type SignupValues = z.infer<typeof signupSchema>;
 
-// ── Password rule descriptors (shown as checklist under the input) ─────────────
-
 interface PasswordRule {
 	id: string;
 	label: string;
@@ -59,30 +57,21 @@ interface PasswordRule {
 }
 
 const PASSWORD_RULES: PasswordRule[] = [
-	{ id: "len", label: "At least 8 characters", test: (v) => v.length >= 8 },
+	{ id: "len", label: "8+ chars", test: (v) => v.length >= 8 },
 	{
 		id: "upper",
-		label: "One uppercase letter (A–Z)",
+		label: "Uppercase",
 		test: (v) => /[A-Z]/.test(v),
 	},
 	{
 		id: "lower",
-		label: "One lowercase letter (a–z)",
+		label: "Lowercase",
 		test: (v) => /[a-z]/.test(v),
 	},
-	{ id: "digit", label: "One number (0–9)", test: (v) => /[0-9]/.test(v) },
+	{ id: "digit", label: "Number", test: (v) => /[0-9]/.test(v) },
 ];
 
-// ── Password strength score → colour ──────────────────────────────────────────
-
-function strengthColor(passed: number, total: number) {
-	if (passed === 0) return "bg-muted";
-	if (passed < total / 2) return "bg-destructive";
-	if (passed < total) return "bg-yellow-500";
-	return "bg-emerald-500";
-}
-
-// ── Component ─────────────────────────────────────────────────────────────────
+// ── Component ────────────────────────────────────────────────────────────────
 
 export function SignUpPage() {
 	const navigate = useNavigate();
@@ -113,7 +102,7 @@ export function SignUpPage() {
 			}
 		} catch (error: any) {
 			setServerError(
-				error.data?.message || "An error occurred during sign up"
+				error.data?.message || "Registration failed. Please try again."
 			);
 		}
 	}
@@ -122,182 +111,433 @@ export function SignUpPage() {
 	const passwordTouched = passwordValue.length > 0;
 
 	return (
-		<div className="min-h-screen flex items-center justify-center bg-zinc-50 dark:bg-zinc-950 p-4">
-			<Card className="w-full max-w-md shadow-lg border-zinc-200 dark:border-zinc-800">
-				<CardHeader className="space-y-1">
-					<CardTitle className="text-2xl font-bold tracking-tight text-center">
-						Create an account
-					</CardTitle>
-					<CardDescription className="text-center">
-						Enter your details below to create your account
-					</CardDescription>
-				</CardHeader>
+		<div className="min-h-[100dvh] flex bg-[oklch(0.087_0.018_270)] overflow-hidden">
+			{/* ── Left panel: form ─────────────────────────────────────────── */}
+			<div className="flex flex-1 items-center justify-center p-6 lg:p-12 relative">
+				{/* Ambient glow */}
+				<div
+					className="absolute top-0 left-0 w-[400px] h-[400px] rounded-full opacity-[0.09]"
+					style={{
+						background:
+							"radial-gradient(circle, oklch(0.72 0.2 145) 0%, transparent 70%)",
+						filter: "blur(80px)",
+					}}
+				/>
 
-				<CardContent>
-					<form
-						onSubmit={handleSubmit(onSubmit)}
-						className="space-y-4"
+				{/* Grid overlay */}
+				<div
+					className="absolute inset-0 pointer-events-none opacity-[0.02]"
+					style={{
+						backgroundImage:
+							"linear-gradient(oklch(1 0 0) 1px, transparent 1px), linear-gradient(90deg, oklch(1 0 0) 1px, transparent 1px)",
+						backgroundSize: "40px 40px",
+					}}
+				/>
+
+				{/* Mobile brand mark */}
+				<div className="absolute top-6 left-6 flex items-center gap-2 lg:hidden z-10">
+					<div
+						className="flex h-7 w-7 items-center justify-center rounded-md"
+						style={{
+							background: "oklch(0.62 0.24 275)",
+							boxShadow: "0 0 14px oklch(0.62 0.24 275 / 0.3)",
+						}}
 					>
-						{/* ── Username ── */}
-						<div className="space-y-2">
-							<Label htmlFor="username">Username</Label>
-							<Input
-								id="username"
-								type="text"
-								placeholder="johndoe"
-								autoComplete="username"
-								{...register("username")}
-							/>
-							{errors.username && (
-								<p className="text-sm font-medium text-destructive">
-									{errors.username.message}
+						<Code size={14} weight="bold" className="text-white" />
+					</div>
+					<span
+						className="text-base font-bold tracking-tight"
+						style={{ fontFamily: "var(--font-display)" }}
+					>
+						Air{" "}
+						<span style={{ color: "oklch(0.62 0.24 275)" }}>
+							IDE
+						</span>
+					</span>
+				</div>
+
+				{/* Form card — Double-Bezel */}
+				<div className="w-full max-w-sm relative z-10 animate-fade-up">
+					<div
+						className="rounded-2xl p-px"
+						style={{
+							background:
+								"linear-gradient(135deg, oklch(1 0 0 / 0.1) 0%, oklch(1 0 0 / 0.03) 100%)",
+						}}
+					>
+						<div
+							className="rounded-[calc(1rem-1px)] p-8"
+							style={{
+								background: "oklch(0.12 0.016 270 / 0.95)",
+								backdropFilter: "blur(24px)",
+								boxShadow:
+									"inset 0 1px 0 oklch(1 0 0 / 0.08), inset 0 -1px 0 oklch(0 0 0 / 0.15), 0 32px 80px oklch(0 0 0 / 0.5)",
+							}}
+						>
+							{/* Header */}
+							<div className="mb-7">
+								<p className="text-xs font-mono uppercase tracking-[0.15em] text-[oklch(0.72_0.2_145)] mb-2">
+									[ NEW USER ]
 								</p>
-							)}
-							<p className="text-xs text-muted-foreground">
-								3–30 characters, letters, numbers and
-								underscores only.
+								<h2
+									className="text-2xl font-bold text-[oklch(0.94_0.008_270)] tracking-tight"
+									style={{
+										fontFamily: "var(--font-display)",
+									}}
+								>
+									Create your account
+								</h2>
+								<p className="mt-1 text-sm text-[oklch(0.56_0.012_270)]">
+									Start collaborating in seconds
+								</p>
+							</div>
+
+							<form
+								onSubmit={handleSubmit(onSubmit)}
+								className="space-y-4"
+							>
+								{/* Username */}
+								<div className="space-y-1.5">
+									<Label
+										htmlFor="username"
+										className="text-xs font-mono uppercase tracking-wider text-[oklch(0.56_0.012_270)]"
+									>
+										Username
+									</Label>
+									<Input
+										id="username"
+										type="text"
+										placeholder="your_handle"
+										autoComplete="username"
+										{...register("username")}
+									/>
+									{errors.username ? (
+										<p className="text-xs font-mono text-[oklch(0.65_0.22_22)] mt-1">
+											{errors.username.message}
+										</p>
+									) : (
+										<p className="text-xs font-mono text-[oklch(0.42_0.01_270)] mt-1">
+											3–30 chars · letters, numbers,
+											underscores
+										</p>
+									)}
+								</div>
+
+								{/* Email */}
+								<div className="space-y-1.5">
+									<Label
+										htmlFor="email"
+										className="text-xs font-mono uppercase tracking-wider text-[oklch(0.56_0.012_270)]"
+									>
+										Email
+									</Label>
+									<Input
+										id="email"
+										type="email"
+										placeholder="name@example.com"
+										autoComplete="email"
+										{...register("email")}
+									/>
+									{errors.email && (
+										<p className="text-xs font-mono text-[oklch(0.65_0.22_22)] mt-1">
+											{errors.email.message}
+										</p>
+									)}
+								</div>
+
+								{/* Password */}
+								<div className="space-y-1.5">
+									<Label
+										htmlFor="password"
+										className="text-xs font-mono uppercase tracking-wider text-[oklch(0.56_0.012_270)]"
+									>
+										Password
+									</Label>
+									<div className="relative">
+										<Input
+											id="password"
+											type={
+												showPassword
+													? "text"
+													: "password"
+											}
+											placeholder="••••••••"
+											autoComplete="new-password"
+											className="pr-10"
+											{...register("password", {
+												onChange: (e) =>
+													setPasswordValue(
+														e.target.value
+													),
+											})}
+										/>
+										<button
+											type="button"
+											onClick={() =>
+												setShowPassword((v) => !v)
+											}
+											className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[oklch(0.45_0.01_270)] hover:text-[oklch(0.72_0.012_270)] transition-colors"
+											aria-label={
+												showPassword
+													? "Hide password"
+													: "Show password"
+											}
+										>
+											{showPassword ? (
+												<EyeSlash size={15} />
+											) : (
+												<Eye size={15} />
+											)}
+										</button>
+									</div>
+
+									{/* Strength bar — 4 segments */}
+									{passwordTouched && (
+										<div className="flex gap-1 pt-1">
+											{PASSWORD_RULES.map((_, i) => {
+												const filled =
+													i < passedRules.length;
+												const all =
+													passedRules.length ===
+													PASSWORD_RULES.length;
+												const half =
+													passedRules.length >= 2;
+												const color = all
+													? "oklch(0.72 0.2 145)"
+													: half
+														? "oklch(0.78 0.18 85)"
+														: "oklch(0.65 0.22 22)";
+												return (
+													<div
+														key={i}
+														className="h-[3px] flex-1 rounded-full transition-all duration-300"
+														style={{
+															background: filled
+																? color
+																: "oklch(1 0 0 / 0.08)",
+														}}
+													/>
+												);
+											})}
+										</div>
+									)}
+
+									{/* Rule checklist */}
+									{passwordTouched && (
+										<ul className="grid grid-cols-2 gap-1 pt-1">
+											{PASSWORD_RULES.map((rule) => {
+												const ok =
+													rule.test(passwordValue);
+												return (
+													<li
+														key={rule.id}
+														className="flex items-center gap-1.5 text-[10px] font-mono uppercase tracking-wider transition-colors"
+														style={{
+															color: ok
+																? "oklch(0.72 0.2 145)"
+																: "oklch(0.42 0.01 270)",
+														}}
+													>
+														{ok ? (
+															<Check
+																size={10}
+																weight="bold"
+															/>
+														) : (
+															<X
+																size={10}
+																weight="bold"
+															/>
+														)}
+														{rule.label}
+													</li>
+												);
+											})}
+										</ul>
+									)}
+
+									{errors.password && (
+										<p className="text-xs font-mono text-[oklch(0.65_0.22_22)] mt-1">
+											{errors.password.message}
+										</p>
+									)}
+								</div>
+
+								{/* Server error */}
+								{serverError && (
+									<div
+										className="flex items-start gap-2 rounded-md px-3 py-2.5 text-xs font-mono"
+										style={{
+											background:
+												"oklch(0.65 0.22 22 / 0.08)",
+											border: "1px solid oklch(0.65 0.22 22 / 0.25)",
+											color: "oklch(0.75 0.18 22)",
+										}}
+									>
+										<span className="shrink-0 mt-px">
+											ERR
+										</span>
+										<span>{serverError}</span>
+									</div>
+								)}
+
+								{/* Submit */}
+								<Button
+									type="submit"
+									className="w-full h-10 gap-2 text-sm font-medium mt-1"
+									disabled={isLoading}
+								>
+									{isLoading ? (
+										<>
+											<CircleNotch
+												size={16}
+												className="animate-spin"
+											/>
+											Creating account...
+										</>
+									) : (
+										<>
+											Create account
+											<ArrowRight
+												size={15}
+												weight="bold"
+												className="ml-auto"
+											/>
+										</>
+									)}
+								</Button>
+							</form>
+
+							<p className="mt-6 text-center text-xs font-mono text-[oklch(0.45_0.01_270)] uppercase tracking-wider">
+								Have an account?{" "}
+								<Link
+									to="/auth/login"
+									className="text-[oklch(0.62_0.24_275)] hover:text-[oklch(0.72_0.24_275)] transition-colors"
+								>
+									Sign in
+								</Link>
 							</p>
 						</div>
-
-						{/* ── Email ── */}
-						<div className="space-y-2">
-							<Label htmlFor="email">Email</Label>
-							<Input
-								id="email"
-								type="email"
-								placeholder="name@example.com"
-								autoComplete="email"
-								{...register("email")}
-							/>
-							{errors.email && (
-								<p className="text-sm font-medium text-destructive">
-									{errors.email.message}
-								</p>
-							)}
-						</div>
-
-						{/* ── Password ── */}
-						<div className="space-y-2">
-							<Label htmlFor="password">Password</Label>
-							<div className="relative">
-								<Input
-									id="password"
-									type={showPassword ? "text" : "password"}
-									placeholder="••••••••"
-									autoComplete="new-password"
-									className="pr-10"
-									{...register("password", {
-										onChange: (e) =>
-											setPasswordValue(e.target.value),
-									})}
-								/>
-								<button
-									type="button"
-									onClick={() => setShowPassword((v) => !v)}
-									className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
-									aria-label={
-										showPassword
-											? "Hide password"
-											: "Show password"
-									}
-								>
-									{showPassword ? (
-										<EyeOff className="h-4 w-4" />
-									) : (
-										<Eye className="h-4 w-4" />
-									)}
-								</button>
-							</div>
-
-							{/* Strength bar */}
-							{passwordTouched && (
-								<div className="flex gap-1 pt-0.5">
-									{PASSWORD_RULES.map((_, i) => (
-										<div
-											key={i}
-											className={`h-1 flex-1 rounded-full transition-colors duration-300 ${
-												i < passedRules.length
-													? strengthColor(
-															passedRules.length,
-															PASSWORD_RULES.length
-														)
-													: "bg-muted"
-											}`}
-										/>
-									))}
-								</div>
-							)}
-
-							{/* Rule checklist */}
-							{passwordTouched && (
-								<ul className="space-y-1 pt-1">
-									{PASSWORD_RULES.map((rule) => {
-										const ok = rule.test(passwordValue);
-										return (
-											<li
-												key={rule.id}
-												className={`flex items-center gap-1.5 text-xs transition-colors ${
-													ok
-														? "text-emerald-600 dark:text-emerald-400"
-														: "text-muted-foreground"
-												}`}
-											>
-												{ok ? (
-													<Check className="h-3 w-3 shrink-0" />
-												) : (
-													<X className="h-3 w-3 shrink-0" />
-												)}
-												{rule.label}
-											</li>
-										);
-									})}
-								</ul>
-							)}
-
-							{/* Zod error (shown after first submit attempt) */}
-							{errors.password && (
-								<p className="text-sm font-medium text-destructive">
-									{errors.password.message}
-								</p>
-							)}
-						</div>
-
-						{/* ── Server error ── */}
-						{serverError && (
-							<div className="rounded-md bg-destructive/10 border border-destructive/30 px-3 py-2 text-sm font-medium text-destructive">
-								{serverError}
-							</div>
-						)}
-
-						<Button
-							type="submit"
-							className="w-full"
-							disabled={isLoading}
-						>
-							{isLoading ? (
-								<>
-									<Loader2 className="mr-2 h-4 w-4 animate-spin" />
-									Creating account...
-								</>
-							) : (
-								"Sign up"
-							)}
-						</Button>
-					</form>
-				</CardContent>
-
-				<CardFooter className="flex flex-col space-y-4 border-t border-zinc-100 dark:border-zinc-800 pt-4 mt-2">
-					<div className="text-sm text-center text-muted-foreground">
-						Already have an account?{" "}
-						<Link
-							to="/auth/login"
-							className="text-primary hover:underline font-medium"
-						>
-							Log in
-						</Link>
 					</div>
-				</CardFooter>
-			</Card>
+				</div>
+			</div>
+
+			{/* ── Right panel: brand identity (mirrored) ───────────────── */}
+			<div className="hidden lg:flex lg:w-[48%] relative flex-col justify-between p-12 overflow-hidden">
+				{/* Ambient glow orbs */}
+				<div
+					className="absolute -bottom-32 -right-32 w-[500px] h-[500px] rounded-full opacity-[0.1]"
+					style={{
+						background:
+							"radial-gradient(circle, oklch(0.62 0.24 275) 0%, transparent 70%)",
+						filter: "blur(60px)",
+					}}
+				/>
+				<div
+					className="absolute top-1/4 left-0 w-[300px] h-[300px] rounded-full opacity-[0.06]"
+					style={{
+						background:
+							"radial-gradient(circle, oklch(0.72 0.2 145) 0%, transparent 70%)",
+						filter: "blur(80px)",
+					}}
+				/>
+
+				{/* Grid */}
+				<div
+					className="absolute inset-0 pointer-events-none opacity-[0.025]"
+					style={{
+						backgroundImage:
+							"linear-gradient(oklch(1 0 0) 1px, transparent 1px), linear-gradient(90deg, oklch(1 0 0) 1px, transparent 1px)",
+						backgroundSize: "40px 40px",
+					}}
+				/>
+
+				{/* Left border */}
+				<div className="absolute left-0 top-0 bottom-0 w-px bg-[oklch(1_0_0/0.06)]" />
+
+				{/* Brand mark */}
+				<div className="relative z-10 flex items-center gap-3 animate-fade-in">
+					<div
+						className="flex h-9 w-9 items-center justify-center rounded-lg"
+						style={{
+							background:
+								"linear-gradient(135deg, oklch(0.62 0.24 275), oklch(0.52 0.22 275))",
+							boxShadow:
+								"inset 0 1px 0 oklch(1 0 0 / 0.15), 0 0 20px oklch(0.62 0.24 275 / 0.3)",
+						}}
+					>
+						<Code size={18} weight="bold" className="text-white" />
+					</div>
+					<span
+						className="text-xl font-bold tracking-tight"
+						style={{ fontFamily: "var(--font-display)" }}
+					>
+						Air{" "}
+						<span style={{ color: "oklch(0.62 0.24 275)" }}>
+							IDE
+						</span>
+					</span>
+				</div>
+
+				{/* Copy */}
+				<div className="relative z-10 animate-fade-up delay-75">
+					<p className="text-[oklch(0.72_0.2_145)] text-xs uppercase tracking-[0.18em] mb-5 font-mono">
+						[ Join the network ]
+					</p>
+					<h1
+						className="text-5xl xl:text-6xl font-bold tracking-tight leading-[0.95] text-[oklch(0.94_0.008_270)]"
+						style={{ fontFamily: "var(--font-display)" }}
+					>
+						Build with
+						<br />
+						<span
+							className="text-[oklch(0.62_0.24_275)]"
+							style={{
+								textShadow:
+									"0 0 40px oklch(0.62 0.24 275 / 0.4)",
+							}}
+						>
+							your team.
+						</span>
+					</h1>
+					<p className="mt-6 text-[oklch(0.56_0.012_270)] text-sm leading-relaxed max-w-sm">
+						Create a workspace, invite collaborators, and start
+						coding together. No setup, no friction.
+					</p>
+				</div>
+
+				{/* Features strip */}
+				<div className="relative z-10 space-y-2 animate-fade-up delay-150">
+					{[
+						{ label: "Live cursors", status: "ACTIVE" },
+						{ label: "CRDT sync", status: "STABLE" },
+						{ label: "File sharing", status: "ACTIVE" },
+					].map(({ label, status }) => (
+						<div
+							key={label}
+							className="flex items-center justify-between px-4 py-2.5 rounded-lg"
+							style={{
+								background: "oklch(1 0 0 / 0.03)",
+								border: "1px solid oklch(1 0 0 / 0.06)",
+							}}
+						>
+							<span className="text-xs font-mono text-[oklch(0.56_0.012_270)] uppercase tracking-wider">
+								{label}
+							</span>
+							<span
+								className="text-[10px] font-mono uppercase tracking-widest px-2 py-0.5 rounded"
+								style={{
+									background: "oklch(0.72 0.2 145 / 0.1)",
+									color: "oklch(0.72 0.2 145)",
+									border: "1px solid oklch(0.72 0.2 145 / 0.2)",
+								}}
+							>
+								{status}
+							</span>
+						</div>
+					))}
+				</div>
+			</div>
 		</div>
 	);
 }

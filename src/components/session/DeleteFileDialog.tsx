@@ -1,4 +1,4 @@
-import { Trash2 } from "lucide-react";
+import { Trash } from "@phosphor-icons/react";
 import { Button } from "@/components/ui/button";
 import {
 	Dialog,
@@ -26,8 +26,11 @@ export function DeleteFileDialog({
 		<Dialog open={open} onOpenChange={(v) => !v && onClose()}>
 			<DialogContent className="sm:max-w-sm">
 				<DialogHeader>
-					<DialogTitle className="flex items-center gap-2 text-destructive">
-						<Trash2 className="h-5 w-5" />
+					<DialogTitle
+						className="flex items-center gap-2"
+						style={{ color: "oklch(0.65 0.22 22)" }}
+					>
+						<Trash size={16} weight="light" />
 						Delete File
 					</DialogTitle>
 					<DialogDescription>
@@ -57,7 +60,7 @@ export function DeleteFileDialog({
 							onClose();
 						}}
 					>
-						<Trash2 className="mr-2 h-4 w-4" />
+						<Trash size={14} className="mr-2" />
 						Delete
 					</Button>
 				</DialogFooter>

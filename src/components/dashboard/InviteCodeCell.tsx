@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Copy, Check, Link } from "lucide-react";
+import { Copy, Check, Link } from "@phosphor-icons/react";
 import {
 	Tooltip,
 	TooltipContent,
@@ -39,9 +39,13 @@ export function InviteCodeCell({ code }: { code: string }) {
 							className="text-muted-foreground hover:text-foreground transition-colors"
 						>
 							{copiedCode ? (
-								<Check className="h-3.5 w-3.5 text-status-live" />
+								<Check
+									size={13}
+									weight="bold"
+									style={{ color: "oklch(0.72 0.2 145)" }}
+								/>
 							) : (
-								<Copy className="h-3.5 w-3.5" />
+								<Copy size={13} />
 							)}
 						</button>
 					}
@@ -61,9 +65,13 @@ export function InviteCodeCell({ code }: { code: string }) {
 							className="text-muted-foreground hover:text-foreground transition-colors"
 						>
 							{copiedLink ? (
-								<Check className="h-3.5 w-3.5 text-status-live" />
+								<Check
+									size={13}
+									weight="bold"
+									style={{ color: "oklch(0.72 0.2 145)" }}
+								/>
 							) : (
-								<Link className="h-3.5 w-3.5" />
+								<Link size={13} />
 							)}
 						</button>
 					}

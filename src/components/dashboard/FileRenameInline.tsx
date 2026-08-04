@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Loader2, Pencil, X, Check } from "lucide-react";
+import { CircleNotch, PencilSimple, X, Check } from "@phosphor-icons/react";
 import { useRenameFileMutation } from "@/store/api/api";
 
 interface FileRenameInlineProps {
@@ -74,7 +74,10 @@ export function FileRenameInline({
 					id={`rename-input-${fileId}`}
 				/>
 				{isLoading ? (
-					<Loader2 className="h-3.5 w-3.5 animate-spin text-muted-foreground shrink-0" />
+					<CircleNotch
+						size={13}
+						className="animate-spin text-muted-foreground shrink-0"
+					/>
 				) : (
 					<>
 						<button
@@ -87,7 +90,7 @@ export function FileRenameInline({
 							className="text-emerald-500 hover:text-emerald-400 transition-colors"
 							aria-label="Confirm rename"
 						>
-							<Check className="h-3.5 w-3.5" />
+							<Check size={13} weight="bold" />
 						</button>
 						<button
 							type="button"
@@ -99,7 +102,7 @@ export function FileRenameInline({
 							className="text-muted-foreground hover:text-foreground transition-colors"
 							aria-label="Cancel rename"
 						>
-							<X className="h-3.5 w-3.5" />
+							<X size={13} weight="bold" />
 						</button>
 					</>
 				)}
@@ -117,7 +120,7 @@ export function FileRenameInline({
 				aria-label="Rename file"
 				id={`rename-btn-${fileId}`}
 			>
-				<Pencil className="h-3 w-3" />
+				<PencilSimple size={11} weight="light" />
 			</button>
 		</span>
 	);
