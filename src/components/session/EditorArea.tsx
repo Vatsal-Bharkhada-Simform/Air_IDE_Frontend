@@ -15,43 +15,26 @@ import {
 import type { SessionFile } from "@/types/collabTypes";
 import { FileTab } from "./FileTab";
 import { toMonacoLang } from "./helpers";
+import { useTheme } from "@/components/theme-provider";
 
 /* ─── No-file-open placeholder ─────────────────────────────── */
 
 function NoFileOpen({ onNewFileClick }: { onNewFileClick: () => void }) {
 	return (
-		<div className="flex flex-1 flex-col items-center justify-center gap-5">
+		<div className="flex flex-1 flex-col items-center justify-center gap-5 bg-editor-bg">
 			{/* Icon */}
-			<div className="relative">
-				<div
-					className="absolute inset-0 rounded-2xl opacity-15"
-					style={{
-						background: "oklch(0.62 0.24 275)",
-						filter: "blur(16px)",
-					}}
+			<div className="relative flex h-14 w-14 items-center justify-center rounded-[12px] bg-editor-panel border border-editor-border">
+				<FileCode
+					size={22}
+					weight="light"
+					className="text-editor-muted"
 				/>
-				<div
-					className="relative flex h-14 w-14 items-center justify-center rounded-2xl"
-					style={{
-						background: "oklch(0.14 0.018 270)",
-						border: "1px solid oklch(1 0 0 / 0.07)",
-					}}
-				>
-					<FileCode
-						size={22}
-						weight="light"
-						style={{ color: "oklch(0.50 0.012 270)" }}
-					/>
-				</div>
 			</div>
 			<div className="text-center space-y-1.5">
-				<p
-					className="text-sm font-medium text-[oklch(0.65_0.01_270)] tracking-tight"
-					style={{ fontFamily: "var(--font-display)" }}
-				>
+				<p className="text-sm font-medium text-editor-text tracking-tight">
 					No file open
 				</p>
-				<p className="text-xs font-mono text-[oklch(0.42_0.01_270)] uppercase tracking-wider">
+				<p className="text-xs font-medium text-editor-muted uppercase tracking-wider">
 					Select from explorer or create new
 				</p>
 			</div>
@@ -101,19 +84,19 @@ export function EditorArea({
 	lastSavedAt,
 }: EditorAreaProps) {
 	const activeFile = openTabs.find((f) => f.id === activeFileId);
-	// Force dark mode for the Monaco editor
-	const editorTheme = "vs-dark";
+	const { theme } = useTheme();
+
+	const isDark =
+		theme === "dark" ||
+		(theme === "system" &&
+			window.matchMedia("(prefers-color-scheme: dark)").matches);
+
+	const editorTheme = isDark ? "vs-dark" : "vs";
 
 	return (
 		<div className="flex flex-col flex-1 min-w-0 overflow-hidden">
 			{/* Tab bar */}
-			<div
-				className="h-9 flex items-center overflow-x-auto shrink-0"
-				style={{
-					background: "oklch(0.095 0.014 270)",
-					borderBottom: "1px solid oklch(1 0 0 / 0.06)",
-				}}
-			>
+			<div className="h-9 flex items-center overflow-x-auto shrink-0 bg-editor-bg border-b border-editor-border">
 				{openTabs.map((file) => (
 					<FileTab
 						key={file.id}
@@ -131,7 +114,7 @@ export function EditorArea({
 							<Button
 								variant="ghost"
 								size="icon"
-								className="h-7 w-7 rounded-md ml-0.5 shrink-0"
+								className="h-7 w-7 rounded-md ml-0.5 shrink-0 text-editor-muted hover:text-editor-text hover:bg-editor-panel"
 								onClick={onNewFileClick}
 								id="new-file-btn"
 							>
@@ -180,31 +163,18 @@ export function EditorArea({
 					</div>
 
 					{/* Save status bar */}
-					<div
-						className="flex items-center justify-between px-3 py-1 shrink-0"
-						style={{
-							background: "oklch(0.08 0.012 270)",
-							borderTop: "1px solid oklch(1 0 0 / 0.05)",
-						}}
-					>
+					<div className="flex items-center justify-between px-3 py-1 shrink-0 bg-editor-bg border-t border-editor-border">
 						<div className="flex items-center gap-3 text-[10px] font-mono">
-							<span
-								className="px-1.5 py-0.5 rounded text-[10px] uppercase tracking-wider"
-								style={{
-									background: "oklch(0.62 0.24 275 / 0.1)",
-									border: "1px solid oklch(0.62 0.24 275 / 0.2)",
-									color: "oklch(0.62 0.24 275)",
-								}}
-							>
+							<span className="px-1.5 py-0.5 rounded text-[10px] uppercase tracking-wider bg-editor-panel border border-editor-border text-editor-muted">
 								{toMonacoLang(activeFile.language)}
 							</span>
-							<span className="text-[oklch(0.42_0.01_270)] uppercase tracking-wider">
+							<span className="text-editor-muted font-sans font-medium uppercase tracking-wider">
 								{activeFile.filename}
 							</span>
 						</div>
 						<div className="flex items-center gap-3">
 							{lastSavedAt && (
-								<span className="flex items-center gap-1 text-[10px] font-mono text-[oklch(0.42_0.01_270)]">
+								<span className="flex items-center gap-1 text-[10px] text-editor-muted">
 									<Clock size={10} />
 									{lastSavedBy} ·{" "}
 									{new Date(lastSavedAt).toLocaleTimeString()}
@@ -216,7 +186,7 @@ export function EditorArea({
 										<Button
 											variant="ghost"
 											size="sm"
-											className="h-5 gap-1 px-2 text-[10px] font-mono uppercase tracking-wider"
+											className="h-5 gap-1 px-2 text-[10px] font-medium uppercase tracking-wider text-editor-muted hover:text-editor-text hover:bg-editor-panel"
 											onClick={onSave}
 											id="save-file-btn"
 										>

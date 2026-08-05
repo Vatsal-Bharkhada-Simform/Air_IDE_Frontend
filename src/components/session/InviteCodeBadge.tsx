@@ -35,18 +35,11 @@ export function InviteCodeBadge({ code }: InviteCodeBadgeProps) {
 					render={
 						<button
 							onClick={copyCode}
-							className="flex items-center gap-1.5 rounded px-2.5 py-1 text-[10px] font-mono uppercase tracking-wider transition-all duration-150"
-							style={{
-								background: copiedCode
-									? "oklch(0.72 0.2 145 / 0.08)"
-									: "oklch(1 0 0 / 0.04)",
-								border: copiedCode
-									? "1px solid oklch(0.72 0.2 145 / 0.3)"
-									: "1px solid oklch(1 0 0 / 0.08)",
-								color: copiedCode
-									? "oklch(0.72 0.2 145)"
-									: "oklch(0.70 0.01 270)",
-							}}
+							className={`flex items-center gap-1.5 rounded px-2.5 py-1 text-[10px] font-medium uppercase tracking-wider transition-all duration-150 border ${
+								copiedCode
+									? "bg-accent-green-bg border-accent-green-fg text-accent-green-fg"
+									: "bg-muted border-border text-foreground"
+							}`}
 						>
 							{copiedCode ? (
 								<Check size={10} weight="bold" />
@@ -69,18 +62,11 @@ export function InviteCodeBadge({ code }: InviteCodeBadgeProps) {
 						<button
 							onClick={copyLink}
 							aria-label="Copy session link"
-							className="flex items-center justify-center rounded p-1 transition-all duration-150"
-							style={{
-								background: copiedLink
-									? "oklch(0.72 0.2 145 / 0.08)"
-									: "oklch(1 0 0 / 0.04)",
-								border: copiedLink
-									? "1px solid oklch(0.72 0.2 145 / 0.3)"
-									: "1px solid oklch(1 0 0 / 0.08)",
-								color: copiedLink
-									? "oklch(0.72 0.2 145)"
-									: "oklch(0.50 0.01 270)",
-							}}
+							className={`flex items-center justify-center rounded p-1 transition-all duration-150 border ${
+								copiedLink
+									? "bg-accent-green-bg border-accent-green-fg text-accent-green-fg"
+									: "bg-muted border-border text-muted-foreground"
+							}`}
 						>
 							{copiedLink ? (
 								<Check size={11} weight="bold" />

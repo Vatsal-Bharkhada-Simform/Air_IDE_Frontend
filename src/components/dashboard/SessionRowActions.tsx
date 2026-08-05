@@ -92,7 +92,7 @@ export function SessionRowActions({ session }: SessionRowActionsProps) {
 					<DropdownMenuSeparator />
 					<DropdownMenuItem
 						onClick={() => setDeleteOpen(true)}
-						className="text-destructive focus:text-destructive"
+						variant="destructive"
 					>
 						<Trash size={14} className="mr-2" />
 						Delete Session

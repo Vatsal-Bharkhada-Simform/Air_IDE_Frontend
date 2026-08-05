@@ -42,7 +42,7 @@ export function InviteCodeCell({ code }: { code: string }) {
 								<Check
 									size={13}
 									weight="bold"
-									style={{ color: "oklch(0.72 0.2 145)" }}
+									className="text-accent-green-fg"
 								/>
 							) : (
 								<Copy size={13} />
@@ -68,7 +68,7 @@ export function InviteCodeCell({ code }: { code: string }) {
 								<Check
 									size={13}
 									weight="bold"
-									style={{ color: "oklch(0.72 0.2 145)" }}
+									className="text-accent-green-fg"
 								/>
 							) : (
 								<Link size={13} />

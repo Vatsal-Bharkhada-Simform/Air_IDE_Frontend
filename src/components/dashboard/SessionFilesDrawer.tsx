@@ -83,7 +83,7 @@ export function SessionFilesDrawer({
 
 	if (isLoading) {
 		return (
-			<div className="flex items-center gap-2 py-4 px-4 text-xs font-mono text-[oklch(0.45_0.01_270)]">
+			<div className="flex items-center gap-2 py-4 px-4 text-xs font-mono text-muted-foreground">
 				<CircleNotch size={13} className="animate-spin" />
 				Loading files…
 			</div>
@@ -92,10 +92,7 @@ export function SessionFilesDrawer({
 
 	if (isError) {
 		return (
-			<div
-				className="flex items-center gap-2 py-4 px-4 text-xs font-mono"
-				style={{ color: "oklch(0.65 0.22 22)" }}
-			>
+			<div className="flex items-center gap-2 py-4 px-4 text-xs font-mono text-accent-red-fg">
 				<WarningCircle size={13} />
 				Failed to load files.
 			</div>
@@ -106,7 +103,7 @@ export function SessionFilesDrawer({
 
 	if (files.length === 0) {
 		return (
-			<div className="flex items-center gap-2 py-4 px-4 text-xs font-mono text-[oklch(0.45_0.01_270)]">
+			<div className="flex items-center gap-2 py-4 px-4 text-xs font-mono text-muted-foreground">
 				<FileCode size={13} weight="light" />
 				No files in this session yet.
 			</div>
@@ -154,7 +151,7 @@ export function SessionFilesDrawer({
 
 						{/* Language badge */}
 						<Badge
-							variant="secondary"
+							variant="default"
 							className="text-xs font-mono px-1.5 py-0 shrink-0"
 						>
 							{langLabel(file.language)}

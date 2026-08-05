@@ -5,7 +5,7 @@ import { ThemeProvider } from "@/components/theme-provider";
 
 function App() {
 	return (
-		<ThemeProvider defaultTheme="dark" storageKey="vite-ui-theme">
+		<ThemeProvider defaultTheme="light" storageKey="air-ide-theme">
 			<TooltipProvider delay={300}>
 				<RouterProvider router={router} />
 			</TooltipProvider>

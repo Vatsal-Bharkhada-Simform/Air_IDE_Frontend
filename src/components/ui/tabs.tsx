@@ -1,5 +1,4 @@
 import { Tabs as TabsPrimitive } from "@base-ui/react/tabs";
-import { cva, type VariantProps } from "class-variance-authority";
 
 import { cn } from "@/lib/utils";
 
@@ -21,32 +20,23 @@ function Tabs({
 	);
 }
 
-const tabsListVariants = cva(
-	"group/tabs-list inline-flex w-fit items-center justify-center p-[3px] text-muted-foreground group-data-horizontal/tabs:h-9 group-data-vertical/tabs:h-fit group-data-vertical/tabs:flex-col data-[variant=line]:rounded-none",
-	{
-		variants: {
-			variant: {
-				default:
-					"rounded-lg bg-[oklch(1_0_0/0.04)] border border-[oklch(1_0_0/0.06)]",
-				line: "gap-0 bg-transparent border-b border-[oklch(1_0_0/0.08)]",
-			},
-		},
-		defaultVariants: {
-			variant: "default",
-		},
-	}
-);
-
 function TabsList({
 	className,
-	variant = "default",
+	variant = "line",
 	...props
-}: TabsPrimitive.List.Props & VariantProps<typeof tabsListVariants>) {
+}: TabsPrimitive.List.Props & { variant?: "default" | "line" }) {
 	return (
 		<TabsPrimitive.List
 			data-slot="tabs-list"
 			data-variant={variant}
-			className={cn(tabsListVariants({ variant }), className)}
+			className={cn(
+				"group/tabs-list inline-flex items-center text-muted-foreground",
+				variant === "default" &&
+					"w-fit gap-1 rounded border border-border bg-muted p-1",
+				variant === "line" &&
+					"w-full gap-0 border-b border-border bg-transparent",
+				className
+			)}
 			{...props}
 		/>
 	);
@@ -58,13 +48,17 @@ function TabsTrigger({ className, ...props }: TabsPrimitive.Tab.Props) {
 			data-slot="tabs-trigger"
 			className={cn(
 				// Base
-				"relative inline-flex h-[calc(100%-1px)] flex-1 items-center justify-center gap-1.5 rounded-md border border-transparent px-3 py-1 text-xs font-medium uppercase tracking-[0.08em] whitespace-nowrap text-muted-foreground transition-all duration-150 ease-[cubic-bezier(0.32,0.72,0,1)] group-data-vertical/tabs:w-full group-data-vertical/tabs:justify-start hover:text-foreground focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 focus-visible:outline-1 focus-visible:outline-ring disabled:pointer-events-none disabled:opacity-50 has-data-[icon=inline-end]:pr-1.5 has-data-[icon=inline-start]:pl-1.5 aria-disabled:pointer-events-none aria-disabled:opacity-50",
-				// Font
-				"font-[family-name:var(--font-mono)] [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
-				// Default variant active
-				"group-data-[variant=default]/tabs-list:data-active:bg-[oklch(0.22_0.025_275)] group-data-[variant=default]/tabs-list:data-active:text-foreground group-data-[variant=default]/tabs-list:data-active:border-[oklch(1_0_0/0.08)] group-data-[variant=default]/tabs-list:data-active:shadow-[inset_0_1px_0_oklch(1_0_0/0.06)]",
-				// Line variant active — indigo bottom bar
-				"group-data-[variant=line]/tabs-list:rounded-none group-data-[variant=line]/tabs-list:border-b-2 group-data-[variant=line]/tabs-list:border-b-transparent group-data-[variant=line]/tabs-list:bg-transparent group-data-[variant=line]/tabs-list:data-active:border-b-primary group-data-[variant=line]/tabs-list:data-active:bg-transparent group-data-[variant=line]/tabs-list:data-active:text-foreground",
+				"relative inline-flex items-center justify-center gap-1.5 px-3 py-1.5 text-xs font-medium uppercase tracking-[0.06em] whitespace-nowrap transition-all duration-150 ease-out outline-none",
+				"focus-visible:ring-2 focus-visible:ring-ring",
+				"disabled:pointer-events-none disabled:opacity-40",
+				// Default variant (pill)
+				"group-data-[variant=default]/tabs-list:rounded-[calc(var(--radius)-2px)]",
+				"group-data-[variant=default]/tabs-list:data-active:bg-card group-data-[variant=default]/tabs-list:data-active:text-foreground group-data-[variant=default]/tabs-list:data-active:border group-data-[variant=default]/tabs-list:data-active:border-border group-data-[variant=default]/tabs-list:data-active:shadow-none",
+				// Line variant (underline)
+				"group-data-[variant=line]/tabs-list:rounded-none group-data-[variant=line]/tabs-list:h-10 group-data-[variant=line]/tabs-list:border-b-2 group-data-[variant=line]/tabs-list:border-b-transparent group-data-[variant=line]/tabs-list:bg-transparent",
+				"group-data-[variant=line]/tabs-list:data-active:border-b-foreground group-data-[variant=line]/tabs-list:data-active:text-foreground",
+				// Hover
+				"hover:text-foreground",
 				className
 			)}
 			{...props}
@@ -82,4 +76,4 @@ function TabsContent({ className, ...props }: TabsPrimitive.Panel.Props) {
 	);
 }
 
-export { Tabs, TabsList, TabsTrigger, TabsContent, tabsListVariants };
+export { Tabs, TabsList, TabsTrigger, TabsContent };

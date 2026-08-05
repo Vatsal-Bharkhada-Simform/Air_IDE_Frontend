@@ -23,24 +23,18 @@ export function MembersSidebar({
 }: MembersSidebarProps) {
 	return (
 		<aside
-			className={`
-				flex flex-col transition-all duration-200
-				${collapsed ? "w-10" : "w-52"}
-			`}
-			style={{
-				borderRight: "1px solid oklch(1 0 0 / 0.06)",
-				background: "oklch(0.095 0.014 270)",
-			}}
+			className={`flex flex-col transition-all duration-200 bg-card border-r border-border ${
+				collapsed ? "w-10" : "w-52"
+			}`}
 		>
 			{/* Sidebar header */}
 			<div
-				className={`flex h-9 items-center px-2 shrink-0 ${
+				className={`flex h-9 items-center px-2 shrink-0 border-b border-border ${
 					collapsed ? "justify-center" : "justify-between"
 				}`}
-				style={{ borderBottom: "1px solid oklch(1 0 0 / 0.05)" }}
 			>
 				{!collapsed && (
-					<span className="flex items-center gap-1.5 text-[10px] font-mono uppercase tracking-wider text-[oklch(0.45_0.01_270)]">
+					<span className="flex items-center gap-1.5 text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
 						<Users size={11} />
 						Members · {users.length}
 					</span>
@@ -69,12 +63,10 @@ export function MembersSidebar({
 						<Tooltip key={user.userId}>
 							<TooltipTrigger className="w-full">
 								<div
-									className={`
-										flex items-center gap-2 px-2 py-1.5 transition-colors hover:bg-[oklch(1_0_0/0.03)] cursor-default
-										${collapsed ? "justify-center" : ""}
-									`}
+									className={`flex items-center gap-2 px-2 py-1.5 transition-colors hover:bg-muted cursor-default ${
+										collapsed ? "justify-center" : ""
+									}`}
 									style={{
-										// Color-coded left border stripe matching user cursor
 										borderLeft: `2px solid ${isInActiveFile ? user.color : "transparent"}`,
 										paddingLeft: "6px",
 									}}
@@ -92,7 +84,7 @@ export function MembersSidebar({
 										/>
 										{/* Online dot */}
 										<span
-											className="absolute -bottom-0.5 -right-0.5 h-2 w-2 rounded-full border border-[oklch(0.095_0.014_270)]"
+											className="absolute -bottom-0.5 -right-0.5 h-2 w-2 rounded-full border border-card"
 											style={{
 												backgroundColor: user.color,
 											}}
@@ -101,16 +93,11 @@ export function MembersSidebar({
 
 									{!collapsed && (
 										<div className="min-w-0 flex-1 text-left">
-											<p className="text-xs font-mono truncate leading-none text-[oklch(0.75_0.008_270)]">
+											<p className="text-xs font-medium truncate leading-none text-foreground">
 												{user.username}
 											</p>
 											{isInActiveFile && (
-												<p
-													className="text-[10px] font-mono mt-0.5 tabular-nums"
-													style={{
-														color: "oklch(0.45 0.01 270)",
-													}}
-												>
+												<p className="text-[10px] text-muted-foreground mt-0.5 tabular-nums">
 													L{user.cursor.line}·C
 													{user.cursor.column}
 												</p>
@@ -122,7 +109,7 @@ export function MembersSidebar({
 							{collapsed && (
 								<TooltipContent side="right">
 									<div>
-										<p className="font-mono text-xs">
+										<p className="font-medium text-xs">
 											{user.username}
 										</p>
 										{isInActiveFile && (

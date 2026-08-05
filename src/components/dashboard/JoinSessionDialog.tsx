@@ -80,10 +80,7 @@ export function JoinSessionDialog({ open, onClose }: JoinSessionDialogProps) {
 			<DialogContent className="sm:max-w-md">
 				<DialogHeader>
 					<DialogTitle className="flex items-center gap-2 text-base font-semibold tracking-tight">
-						<ArrowRight
-							size={16}
-							style={{ color: "oklch(0.62 0.24 275)" }}
-						/>
+						<ArrowRight size={16} className="text-primary" />
 						Join a Session
 					</DialogTitle>
 					<DialogDescription>
@@ -102,14 +99,14 @@ export function JoinSessionDialog({ open, onClose }: JoinSessionDialogProps) {
 							{...register("inviteCode")}
 						/>
 						{errors.inviteCode && (
-							<p className="text-sm text-destructive">
+							<p className="text-sm text-accent-red-fg">
 								{errors.inviteCode.message}
 							</p>
 						)}
 					</div>
 
 					{serverError && (
-						<p className="text-sm text-destructive">
+						<p className="text-sm text-accent-red-fg">
 							{serverError}
 						</p>
 					)}

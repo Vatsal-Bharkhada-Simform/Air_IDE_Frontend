@@ -31,7 +31,7 @@ function DialogOverlay({
 		<DialogPrimitive.Backdrop
 			data-slot="dialog-overlay"
 			className={cn(
-				"fixed inset-0 isolate z-50 bg-[oklch(0_0_0/0.7)] backdrop-blur-xl duration-200 data-open:animate-in data-open:fade-in-0 data-closed:animate-out data-closed:fade-out-0",
+				"fixed inset-0 isolate z-50 bg-black/25 duration-200 data-open:animate-in data-open:fade-in-0 data-closed:animate-out data-closed:fade-out-0",
 				className
 			)}
 			{...props}
@@ -54,11 +54,11 @@ function DialogContent({
 				data-slot="dialog-content"
 				className={cn(
 					// Positioning
-					"fixed top-1/2 left-1/2 z-50 grid w-full max-w-[calc(100%-2rem)] -translate-x-1/2 -translate-y-1/2 gap-6 rounded-xl p-6 text-sm text-popover-foreground outline-none sm:max-w-md",
-					// Glass heavy surface
-					"bg-[oklch(0.16_0.02_270/0.95)] backdrop-blur-2xl",
-					// Border & shadow
-					"border border-[oklch(1_0_0/0.08)] shadow-[inset_0_1px_0_oklch(1_0_0/0.08),0_24px_80px_oklch(0_0_0/0.6)]",
+					"fixed top-1/2 left-1/2 z-50 grid w-full max-w-[calc(100%-2rem)] -translate-x-1/2 -translate-y-1/2 gap-6 rounded-lg p-6 text-sm text-popover-foreground outline-none sm:max-w-md",
+					// Flat card surface
+					"bg-card border border-border",
+					// Minimal shadow for elevation hint
+					"shadow-[0_8px_32px_rgba(0,0,0,0.10)]",
 					// Animation
 					"duration-200 data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95",
 					className
@@ -128,7 +128,7 @@ function DialogTitle({ className, ...props }: DialogPrimitive.Title.Props) {
 		<DialogPrimitive.Title
 			data-slot="dialog-title"
 			className={cn(
-				"font-[family-name:var(--font-display)] text-base leading-none font-semibold tracking-tight",
+				"text-base leading-none font-semibold tracking-tight text-foreground",
 				className
 			)}
 			{...props}

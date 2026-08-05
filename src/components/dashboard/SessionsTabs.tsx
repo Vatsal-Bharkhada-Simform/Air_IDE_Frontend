@@ -31,9 +31,9 @@ export function SessionsTabs({ onCreateClick }: SessionsTabsProps) {
 
 	if (myLoading || joinedLoading) {
 		return (
-			<div className="flex items-center justify-center py-20 gap-2 text-[oklch(0.45_0.01_270)]">
+			<div className="flex items-center justify-center py-20 gap-2 text-muted-foreground">
 				<CircleNotch size={16} className="animate-spin" />
-				<span className="text-xs font-mono uppercase tracking-wider">
+				<span className="text-xs font-medium uppercase tracking-wider">
 					Loading sessions…
 				</span>
 			</div>
@@ -43,7 +43,7 @@ export function SessionsTabs({ onCreateClick }: SessionsTabsProps) {
 	if (myError || joinedError) {
 		return (
 			<div className="flex items-center justify-center py-20">
-				<p className="text-sm text-destructive">
+				<p className="text-sm text-accent-red-fg">
 					Failed to load sessions. Please refresh the page.
 				</p>
 			</div>
@@ -57,7 +57,7 @@ export function SessionsTabs({ onCreateClick }: SessionsTabsProps) {
 					My Sessions
 					{mySessions.length > 0 && (
 						<Badge
-							variant="secondary"
+							variant="default"
 							className="ml-2 h-5 min-w-5 px-1.5 text-xs"
 						>
 							{mySessions.length}
@@ -68,7 +68,7 @@ export function SessionsTabs({ onCreateClick }: SessionsTabsProps) {
 					Joined Sessions
 					{joinedSessions.length > 0 && (
 						<Badge
-							variant="secondary"
+							variant="default"
 							className="ml-2 h-5 min-w-5 px-1.5 text-xs"
 						>
 							{joinedSessions.length}

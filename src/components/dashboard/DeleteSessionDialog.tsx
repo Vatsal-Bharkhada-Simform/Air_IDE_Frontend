@@ -54,7 +54,7 @@ export function DeleteSessionDialog({
 					<AlertDialogAction
 						onClick={handleConfirm}
 						disabled={isLoading}
-						className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+						className="bg-accent-red-bg text-accent-red-fg hover:bg-accent-red-bg border border-accent-red-fg"
 						id="confirm-delete-session-btn"
 					>
 						{isLoading ? (

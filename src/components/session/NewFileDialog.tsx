@@ -57,10 +57,7 @@ export function NewFileDialog({
 			<DialogContent className="sm:max-w-sm">
 				<DialogHeader>
 					<DialogTitle className="flex items-center gap-2">
-						<FilePlus
-							size={16}
-							style={{ color: "oklch(0.62 0.24 275)" }}
-						/>
+						<FilePlus size={16} className="text-primary" />
 						New File
 					</DialogTitle>
 					<DialogDescription>
@@ -85,7 +82,9 @@ export function NewFileDialog({
 							autoFocus
 						/>
 						{error && (
-							<p className="text-sm text-destructive">{error}</p>
+							<p className="text-sm text-accent-red-fg">
+								{error}
+							</p>
 						)}
 					</div>
 					<DialogFooter>

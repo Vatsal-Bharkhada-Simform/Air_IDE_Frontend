@@ -26,10 +26,7 @@ export function DeleteFileDialog({
 		<Dialog open={open} onOpenChange={(v) => !v && onClose()}>
 			<DialogContent className="sm:max-w-sm">
 				<DialogHeader>
-					<DialogTitle
-						className="flex items-center gap-2"
-						style={{ color: "oklch(0.65 0.22 22)" }}
-					>
+					<DialogTitle className="flex items-center gap-2 text-accent-red-fg">
 						<Trash size={16} weight="light" />
 						Delete File
 					</DialogTitle>

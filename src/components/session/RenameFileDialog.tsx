@@ -74,10 +74,7 @@ export function RenameFileDialog({
 			<DialogContent className="sm:max-w-sm">
 				<DialogHeader>
 					<DialogTitle className="flex items-center gap-2">
-						<PencilSimple
-							size={16}
-							style={{ color: "oklch(0.62 0.24 275)" }}
-						/>
+						<PencilSimple size={16} className="text-primary" />
 						Rename File
 					</DialogTitle>
 					<DialogDescription>
@@ -103,7 +100,9 @@ export function RenameFileDialog({
 							autoFocus
 						/>
 						{error && (
-							<p className="text-sm text-destructive">{error}</p>
+							<p className="text-sm text-accent-red-fg">
+								{error}
+							</p>
 						)}
 					</div>
 					<DialogFooter>

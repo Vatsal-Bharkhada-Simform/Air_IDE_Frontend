@@ -5,16 +5,10 @@ export function ConnectionChip({ status }: { status: SocketConnectionStatus }) {
 		return (
 			<div className="flex items-center gap-1.5">
 				<span className="relative flex h-2 w-2" aria-label="Connected">
-					<span
-						className="absolute inline-flex h-full w-full rounded-full opacity-75 animate-live-pulse"
-						style={{ background: "oklch(0.72 0.2 145)" }}
-					/>
-					<span
-						className="relative inline-flex rounded-full h-2 w-2"
-						style={{ background: "oklch(0.72 0.2 145)" }}
-					/>
+					<span className="absolute inline-flex h-full w-full rounded-full opacity-75 animate-live-pulse bg-accent-green-fg" />
+					<span className="relative inline-flex rounded-full h-2 w-2 bg-accent-green-fg" />
 				</span>
-				<span className="text-[10px] font-mono uppercase tracking-wider text-[oklch(0.72_0.2_145)]">
+				<span className="text-[10px] font-medium uppercase tracking-wider text-accent-green-fg">
 					Live
 				</span>
 			</div>
@@ -25,19 +19,10 @@ export function ConnectionChip({ status }: { status: SocketConnectionStatus }) {
 		return (
 			<div className="flex items-center gap-1.5">
 				<span className="relative flex h-2 w-2" aria-label="Connecting">
-					<span
-						className="absolute inline-flex h-full w-full rounded-full opacity-75 animate-spin-slow"
-						style={{
-							background:
-								"conic-gradient(from 0deg, transparent 0%, oklch(0.78 0.18 85) 100%)",
-						}}
-					/>
-					<span
-						className="relative inline-flex rounded-full h-2 w-2"
-						style={{ background: "oklch(0.78 0.18 85 / 0.5)" }}
-					/>
+					<span className="absolute inline-flex h-full w-full rounded-full opacity-75 animate-spin-slow bg-accent-amber-fg" />
+					<span className="relative inline-flex rounded-full h-2 w-2 bg-accent-amber-fg opacity-50" />
 				</span>
-				<span className="text-[10px] font-mono uppercase tracking-wider text-[oklch(0.78_0.18_85)]">
+				<span className="text-[10px] font-medium uppercase tracking-wider text-accent-amber-fg">
 					Connecting
 				</span>
 			</div>
@@ -48,11 +33,10 @@ export function ConnectionChip({ status }: { status: SocketConnectionStatus }) {
 		return (
 			<div className="flex items-center gap-1.5">
 				<span
-					className="h-2 w-2 rounded-full"
-					style={{ background: "oklch(0.65 0.22 22)" }}
+					className="h-2 w-2 rounded-full bg-accent-red-fg"
 					aria-label="Disconnected"
 				/>
-				<span className="text-[10px] font-mono uppercase tracking-wider text-[oklch(0.65_0.22_22)]">
+				<span className="text-[10px] font-medium uppercase tracking-wider text-accent-red-fg">
 					{status === "error" ? "Error" : "Offline"}
 				</span>
 			</div>
@@ -62,11 +46,8 @@ export function ConnectionChip({ status }: { status: SocketConnectionStatus }) {
 	// idle
 	return (
 		<div className="flex items-center gap-1.5">
-			<span
-				className="h-2 w-2 rounded-full"
-				style={{ background: "oklch(1 0 0 / 0.2)" }}
-			/>
-			<span className="text-[10px] font-mono uppercase tracking-wider text-[oklch(0.42_0.01_270)]">
+			<span className="h-2 w-2 rounded-full bg-muted-foreground opacity-50" />
+			<span className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
 				Idle
 			</span>
 		</div>

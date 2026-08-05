@@ -25,19 +25,10 @@ export function FilesPanel({
 	onDeleteClick,
 }: FilesPanelProps) {
 	return (
-		<div
-			className="flex flex-col w-44 shrink-0"
-			style={{
-				borderRight: "1px solid oklch(1 0 0 / 0.06)",
-				background: "oklch(0.10 0.014 270)",
-			}}
-		>
+		<div className="flex flex-col w-44 shrink-0 bg-background border-r border-border">
 			{/* Header */}
-			<div
-				className="flex h-9 items-center px-3"
-				style={{ borderBottom: "1px solid oklch(1 0 0 / 0.05)" }}
-			>
-				<span className="text-[10px] font-mono uppercase tracking-wider text-[oklch(0.42_0.01_270)]">
+			<div className="flex h-9 items-center px-3 border-b border-border">
+				<span className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
 					Explorer
 				</span>
 			</div>
@@ -45,7 +36,7 @@ export function FilesPanel({
 			{/* File list */}
 			<div className="flex-1 overflow-y-auto py-1">
 				{files.length === 0 ? (
-					<p className="px-3 py-4 text-[10px] font-mono uppercase tracking-wider text-[oklch(0.40_0.01_270)] text-center">
+					<p className="px-3 py-4 text-[10px] font-medium uppercase tracking-wider text-muted-foreground text-center">
 						No files
 					</p>
 				) : (
@@ -57,12 +48,11 @@ export function FilesPanel({
 						return (
 							<div
 								key={file.id}
-								className="group relative flex items-center gap-1 px-2 py-1 transition-colors duration-100"
+								className={`group relative flex items-center gap-1 px-2 py-1 transition-colors duration-100 ${
+									isActive ? "bg-muted" : ""
+								}`}
 								style={{
-									borderLeft: `2px solid ${isActive ? "oklch(0.62 0.24 275)" : "transparent"}`,
-									background: isActive
-										? "oklch(0.62 0.24 275 / 0.07)"
-										: undefined,
+									borderLeft: `2px solid ${isActive ? "var(--primary)" : "transparent"}`,
 									paddingLeft: "6px",
 								}}
 							>
@@ -74,20 +64,18 @@ export function FilesPanel({
 									<FileCode
 										size={12}
 										weight="light"
-										className="shrink-0"
-										style={{
-											color: isActive
-												? "oklch(0.62 0.24 275)"
-												: "oklch(0.45 0.01 270)",
-										}}
+										className={`shrink-0 ${
+											isActive
+												? "text-primary"
+												: "text-muted-foreground"
+										}`}
 									/>
 									<span
-										className="flex-1 truncate text-xs font-mono"
-										style={{
-											color: isActive
-												? "oklch(0.88 0.008 270)"
-												: "oklch(0.65 0.01 270)",
-										}}
+										className={`flex-1 truncate text-xs ${
+											isActive
+												? "text-foreground font-medium"
+												: "text-muted-foreground"
+										}`}
 									>
 										{file.filename}
 									</span>
@@ -101,7 +89,7 @@ export function FilesPanel({
 												<TooltipTrigger
 													render={
 														<span
-															className="h-3.5 w-3.5 rounded border border-[oklch(0.10_0.014_270)] text-[8px] flex items-center justify-center font-bold text-white"
+															className="h-3.5 w-3.5 rounded border border-background text-[8px] flex items-center justify-center font-bold text-white"
 															style={{
 																backgroundColor:
 																	v.color,
@@ -128,7 +116,7 @@ export function FilesPanel({
 											render={
 												<button
 													id={`rename-file-${file.id}`}
-													className="rounded p-0.5 transition-colors text-[oklch(0.45_0.01_270)] hover:text-[oklch(0.80_0.008_270)] hover:bg-[oklch(1_0_0/0.06)]"
+													className="rounded p-0.5 transition-colors text-muted-foreground hover:text-foreground hover:bg-muted"
 													onClick={(e) => {
 														e.stopPropagation();
 														onRenameClick(file);
@@ -152,7 +140,7 @@ export function FilesPanel({
 											render={
 												<button
 													id={`delete-file-${file.id}`}
-													className="rounded p-0.5 transition-colors text-[oklch(0.45_0.01_270)] hover:text-[oklch(0.65_0.22_22)] hover:bg-[oklch(0.65_0.22_22/0.08)]"
+													className="rounded p-0.5 transition-colors text-muted-foreground hover:text-accent-red-fg hover:bg-accent-red-bg"
 													onClick={(e) => {
 														e.stopPropagation();
 														onDeleteClick(file);

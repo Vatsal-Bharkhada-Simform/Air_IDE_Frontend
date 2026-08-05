@@ -1,10 +1,11 @@
 import { useState } from "react";
 import {
-	Plus,
 	SignOut,
-	ArrowRight,
 	CircleNotch,
 	Code,
+	ArrowRightIcon,
+	PlusIcon,
+	SignInIcon,
 } from "@phosphor-icons/react";
 import { useNavigate } from "react-router";
 import { useGetUserQuery, useLogoutUserQuery } from "@/store/api/api";
@@ -13,8 +14,7 @@ import { AvatarImage } from "@/components/ui/AvatarImage";
 import { CreateSessionDialog } from "@/components/dashboard/CreateSessionDialog";
 import { JoinSessionDialog } from "@/components/dashboard/JoinSessionDialog";
 import { SessionsTabs } from "@/components/dashboard/SessionsTabs";
-
-/* ─── Logout Button ───────────────────────────────────────── */
+import { ThemeToggle } from "@/components/theme-toggle";
 
 function LogoutButton() {
 	const navigate = useNavigate();
@@ -32,20 +32,18 @@ function LogoutButton() {
 			size="sm"
 			onClick={handleLogout}
 			disabled={isLoading}
-			className="gap-1.5 text-[oklch(0.50_0.01_270)] hover:text-[oklch(0.80_0.008_270)] h-7 px-2 text-xs font-mono uppercase tracking-wider"
+			className="gap-1.5 h-7 px-2"
 			id="logout-btn"
 		>
 			{isLoading ? (
-				<CircleNotch size={13} className="animate-spin" />
+				<CircleNotch size={14} className="animate-spin" />
 			) : (
-				<SignOut size={13} />
+				<SignOut size={14} />
 			)}
-			Logout
+			<span className="hidden sm:inline">Logout</span>
 		</Button>
 	);
 }
-
-/* ─── Dashboard Page ──────────────────────────────────────── */
 
 export function DashboardPage() {
 	const { data: userData } = useGetUserQuery();
@@ -55,97 +53,44 @@ export function DashboardPage() {
 	const username = userData?.data.user?.username ?? "";
 
 	return (
-		<div className="min-h-[100dvh] bg-[oklch(0.087_0.018_270)] flex flex-col relative overflow-hidden">
-			{/* Ambient background */}
-			<div
-				className="fixed -top-40 -right-40 w-[600px] h-[600px] rounded-full pointer-events-none"
-				style={{
-					background:
-						"radial-gradient(circle, oklch(0.62 0.24 275 / 0.08) 0%, transparent 70%)",
-					filter: "blur(40px)",
-				}}
-			/>
-			<div
-				className="fixed bottom-0 left-0 w-[400px] h-[400px] rounded-full pointer-events-none"
-				style={{
-					background:
-						"radial-gradient(circle, oklch(0.72 0.2 145 / 0.04) 0%, transparent 70%)",
-					filter: "blur(60px)",
-				}}
-			/>
-
-			{/* ── Floating island nav ──────────────────────────────── */}
-			<div className="sticky top-0 z-40 px-4 pt-4">
-				<header
-					className="mx-auto max-w-5xl flex h-12 items-center justify-between px-4 animate-fade-in"
-					style={{
-						background: "oklch(0.12 0.016 270 / 0.88)",
-						backdropFilter: "blur(20px)",
-						border: "1px solid oklch(1 0 0 / 0.08)",
-						borderRadius: "16px",
-						boxShadow:
-							"inset 0 1px 0 oklch(1 0 0 / 0.07), 0 8px 32px oklch(0 0 0 / 0.35)",
-					}}
-				>
+		<div className="min-h-[100dvh] bg-background flex flex-col relative overflow-hidden">
+			{/* ── Flat Header ──────────────────────────────── */}
+			<div className="sticky top-0 z-40 bg-card border-b border-border h-14 flex items-center px-4 sm:px-6">
+				<div className="mx-auto w-full max-w-5xl flex items-center justify-between">
 					{/* Brand */}
 					<div className="flex items-center gap-2.5">
-						<div
-							className="flex h-7 w-7 items-center justify-center rounded-lg"
-							style={{
-								background:
-									"linear-gradient(135deg, oklch(0.62 0.24 275), oklch(0.52 0.22 275))",
-								boxShadow:
-									"inset 0 1px 0 oklch(1 0 0 / 0.15), 0 0 14px oklch(0.62 0.24 275 / 0.25)",
-							}}
-						>
-							<Code
-								size={14}
-								weight="bold"
-								className="text-white"
-							/>
+						<div className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary text-primary-foreground">
+							<Code size={14} weight="bold" />
 						</div>
-						<span
-							className="text-base font-bold tracking-tight"
-							style={{ fontFamily: "var(--font-display)" }}
-						>
-							Air{" "}
-							<span style={{ color: "oklch(0.62 0.24 275)" }}>
+						<span className="text-base font-bold tracking-tight text-foreground">
+							Air
+							<span className="text-muted-foreground font-normal">
 								IDE
 							</span>
 						</span>
 					</div>
 
 					{/* Right side */}
-					<div className="flex items-center gap-2">
-						{/* User pill */}
-						<div
-							className="hidden sm:flex items-center gap-2 px-2.5 py-1 rounded-lg"
-							style={{
-								background: "oklch(1 0 0 / 0.04)",
-								border: "1px solid oklch(1 0 0 / 0.06)",
-							}}
-						>
+					<div className="flex items-center gap-3">
+						<ThemeToggle />
+						{/* User chip */}
+						<div className="flex items-center gap-2 px-2.5 py-1 rounded-[6px] bg-muted border border-border">
 							<AvatarImage
 								seed={userData?.data.user?.avatarSeed}
 								username={username}
 								className="h-5 w-5"
-								fallbackClassName="text-[9px] font-bold text-white"
-								fallbackStyle={{
-									background: "oklch(0.62 0.24 275)",
-								}}
+								fallbackClassName="text-[9px] font-bold text-primary-foreground"
+								fallbackStyle={{ background: "var(--primary)" }}
 							/>
-							<span className="text-xs font-mono text-[oklch(0.70_0.01_270)] max-w-[120px] truncate">
+							<span className="hidden sm:inline text-xs font-medium text-foreground max-w-[120px] truncate">
 								{username}
 							</span>
 						</div>
 
-						<div
-							className="h-4 w-px hidden sm:block"
-							style={{ background: "oklch(1 0 0 / 0.08)" }}
-						/>
+						<div className="h-4 w-px bg-border" />
 						<LogoutButton />
 					</div>
-				</header>
+				</div>
 			</div>
 
 			{/* ── Main ── */}
@@ -153,16 +98,10 @@ export function DashboardPage() {
 				{/* Page title + actions */}
 				<div className="mb-8 flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between animate-fade-up">
 					<div>
-						<p className="text-[10px] font-mono uppercase tracking-[0.2em] text-[oklch(0.45_0.01_270)] mb-3">
-							[ Workspace ]
-						</p>
-						<h1
-							className="text-4xl font-bold tracking-tight text-[oklch(0.94_0.008_270)] leading-none"
-							style={{ fontFamily: "var(--font-display)" }}
-						>
+						<h1 className="text-3xl font-semibold tracking-tight text-foreground leading-none">
 							Sessions
 						</h1>
-						<p className="mt-2 text-sm text-[oklch(0.50_0.01_270)]">
+						<p className="mt-2 text-sm text-muted-foreground">
 							Collaborative rooms you own or have joined.
 						</p>
 					</div>
@@ -175,11 +114,7 @@ export function DashboardPage() {
 							id="join-session-btn"
 							className="gap-1.5 h-9"
 						>
-							<ArrowRight
-								size={13}
-								weight="bold"
-								className="rotate-180"
-							/>
+							<SignInIcon size={13} weight="bold" />
 							Join
 						</Button>
 						<Button
@@ -188,7 +123,7 @@ export function DashboardPage() {
 							id="create-session-btn"
 							className="gap-1.5 h-9"
 						>
-							<Plus size={13} weight="bold" />
+							<PlusIcon size={13} weight="bold" />
 							New Session
 						</Button>
 					</div>

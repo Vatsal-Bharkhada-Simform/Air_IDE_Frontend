@@ -1,9 +1,4 @@
-import { createContext, useContext, useEffect } from "react";
-
-// ── Dark-only mode ──────────────────────────────────────────────
-// Option B approved: this app is dark-native. The ThemeProvider now
-// always enforces dark mode on mount and exposes a no-op setTheme
-// for backward compatibility with existing call sites.
+import { createContext, useContext, useEffect, useState } from "react";
 
 type Theme = "dark" | "light" | "system";
 
@@ -19,24 +14,43 @@ type ThemeProviderState = {
 };
 
 const initialState: ThemeProviderState = {
-	theme: "dark",
+	theme: "light",
 	setTheme: () => null,
 };
 
 const ThemeProviderContext = createContext<ThemeProviderState>(initialState);
 
-export function ThemeProvider({ children, ...props }: ThemeProviderProps) {
-	// Lock to dark unconditionally
+export function ThemeProvider({
+	children,
+	defaultTheme = "light",
+	storageKey = "air-ide-theme",
+	...props
+}: ThemeProviderProps) {
+	const [theme, setTheme] = useState<Theme>(
+		() => (localStorage.getItem(storageKey) as Theme) ?? defaultTheme
+	);
+
 	useEffect(() => {
 		const root = window.document.documentElement;
-		root.classList.remove("light");
-		root.classList.add("dark");
-	}, []);
+		root.classList.remove("light", "dark");
+
+		if (theme === "system") {
+			const systemTheme = window.matchMedia(
+				"(prefers-color-scheme: dark)"
+			).matches
+				? "dark"
+				: "light";
+			root.classList.add(systemTheme);
+		} else {
+			root.classList.add(theme);
+		}
+	}, [theme]);
 
 	const value: ThemeProviderState = {
-		theme: "dark",
-		setTheme: () => {
-			// No-op: dark-only mode. Light mode is not supported in this design.
+		theme,
+		setTheme: (newTheme: Theme) => {
+			localStorage.setItem(storageKey, newTheme);
+			setTheme(newTheme);
 		},
 	};
 
@@ -49,9 +63,7 @@ export function ThemeProvider({ children, ...props }: ThemeProviderProps) {
 
 export const useTheme = () => {
 	const context = useContext(ThemeProviderContext);
-
 	if (context === undefined)
 		throw new Error("useTheme must be used within a ThemeProvider");
-
 	return context;
 };

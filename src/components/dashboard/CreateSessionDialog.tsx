@@ -68,10 +68,7 @@ export function CreateSessionDialog({
 			<DialogContent className="sm:max-w-md">
 				<DialogHeader>
 					<DialogTitle className="flex items-center gap-2 text-base font-semibold tracking-tight">
-						<Plus
-							size={16}
-							style={{ color: "oklch(0.62 0.24 275)" }}
-						/>
+						<Plus size={16} className="text-primary" />
 						Create New Session
 					</DialogTitle>
 					<DialogDescription>
@@ -84,7 +81,7 @@ export function CreateSessionDialog({
 					<div className="space-y-1.5">
 						<Label
 							htmlFor="session-name"
-							className="text-xs font-mono uppercase tracking-wider text-[oklch(0.56_0.012_270)]"
+							className="text-xs font-medium text-foreground"
 						>
 							Session Name
 						</Label>
@@ -94,14 +91,14 @@ export function CreateSessionDialog({
 							{...register("name")}
 						/>
 						{errors.name && (
-							<p className="text-xs font-mono text-[oklch(0.65_0.22_22)]">
+							<p className="text-xs text-accent-red-fg mt-1">
 								{errors.name.message}
 							</p>
 						)}
 					</div>
 
 					{serverError && (
-						<p className="text-sm text-destructive">
+						<p className="text-sm text-accent-red-fg">
 							{serverError}
 						</p>
 					)}

@@ -46,38 +46,19 @@ function EmptyState({
 }: EmptyStateProps) {
 	return (
 		<div className="flex flex-col items-center justify-center py-24 text-center gap-6 animate-fade-up">
-			{/* Icon with glow */}
-			<div className="relative">
-				<div
-					className="absolute inset-0 rounded-xl opacity-20"
-					style={{
-						background: "oklch(0.62 0.24 275)",
-						filter: "blur(16px)",
-					}}
+			{/* Icon without glow */}
+			<div className="relative flex h-14 w-14 items-center justify-center rounded-xl bg-muted border border-border">
+				<FileCode
+					size={24}
+					weight="light"
+					className="text-muted-foreground"
 				/>
-				<div
-					className="relative flex h-14 w-14 items-center justify-center rounded-xl"
-					style={{
-						background: "oklch(0.14 0.018 270)",
-						border: "1px solid oklch(1 0 0 / 0.08)",
-						boxShadow: "inset 0 1px 0 oklch(1 0 0 / 0.06)",
-					}}
-				>
-					<FileCode
-						size={24}
-						weight="light"
-						className="text-[oklch(0.56_0.012_270)]"
-					/>
-				</div>
 			</div>
 			<div className="space-y-1.5">
-				<h3
-					className="font-semibold text-base text-[oklch(0.85_0.008_270)] tracking-tight"
-					style={{ fontFamily: "var(--font-display)" }}
-				>
+				<h3 className="font-semibold text-base text-foreground tracking-tight">
 					{label}
 				</h3>
-				<p className="text-sm text-[oklch(0.50_0.01_270)] max-w-xs">
+				<p className="text-sm text-muted-foreground max-w-xs">
 					{description}
 				</p>
 			</div>
@@ -129,49 +110,31 @@ export function SessionTable({
 	}
 
 	return (
-		<div
-			className="rounded-xl overflow-hidden"
-			style={{
-				background: "oklch(0.12 0.016 270 / 0.7)",
-				border: "1px solid oklch(1 0 0 / 0.07)",
-				boxShadow:
-					"inset 0 1px 0 oklch(1 0 0 / 0.05), 0 4px 24px oklch(0 0 0 / 0.3)",
-			}}
-		>
+		<div className="rounded-xl overflow-hidden bg-card border border-border">
 			<Table>
 				<TableHeader>
-					<TableRow
-						className="border-b border-[oklch(1_0_0/0.06)]"
-						style={{ background: "oklch(1 0 0 / 0.02)" }}
-					>
-						<TableHead className="text-[10px] font-mono uppercase tracking-[0.12em] text-[oklch(0.45_0.01_270)] font-normal h-10">
-							Session Name
+					<TableRow className="border-b border-border bg-muted hover:bg-muted">
+						<TableHead className="font-medium text-muted-foreground">
+							Name
 						</TableHead>
-						<TableHead className="text-[10px] font-mono uppercase tracking-[0.12em] text-[oklch(0.45_0.01_270)] font-normal h-10">
-							Invite Code
+						<TableHead className="font-medium text-muted-foreground w-[120px]">
+							Code
 						</TableHead>
-						<TableHead className="text-[10px] font-mono uppercase tracking-[0.12em] text-[oklch(0.45_0.01_270)] font-normal h-10">
+						<TableHead className="font-medium text-muted-foreground w-[100px]">
 							Status
 						</TableHead>
-						<TableHead className="text-[10px] font-mono uppercase tracking-[0.12em] text-[oklch(0.45_0.01_270)] font-normal h-10">
-							<span className="flex items-center gap-1.5">
-								<FileCode size={11} weight="light" />
-								Files
-							</span>
+						<TableHead className="font-medium text-muted-foreground w-[80px]">
+							Files
 						</TableHead>
-						<TableHead className="text-[10px] font-mono uppercase tracking-[0.12em] text-[oklch(0.45_0.01_270)] font-normal h-10">
-							<span className="flex items-center gap-1.5">
-								<Users size={11} weight="light" />
-								Members
-							</span>
+						<TableHead className="font-medium text-muted-foreground w-[100px]">
+							Members
 						</TableHead>
-						<TableHead className="text-[10px] font-mono uppercase tracking-[0.12em] text-[oklch(0.45_0.01_270)] font-normal h-10">
-							<span className="flex items-center gap-1.5">
-								<CalendarDots size={11} weight="light" />
-								Created
-							</span>
+						<TableHead className="font-medium text-muted-foreground w-[120px]">
+							Created
 						</TableHead>
-						<TableHead className="w-10 h-10" />
+						<TableHead className="font-medium text-muted-foreground w-[100px] text-right">
+							Actions
+						</TableHead>
 					</TableRow>
 				</TableHeader>
 				<TableBody>
@@ -181,21 +144,7 @@ export function SessionTable({
 							<>
 								<TableRow
 									key={session.id}
-									className="group cursor-pointer border-b border-[oklch(1_0_0/0.04)] transition-colors duration-100 hover:bg-[oklch(1_0_0/0.025)]"
-									style={{
-										borderLeft: "2px solid transparent",
-									}}
-									onMouseEnter={(e) => {
-										(
-											e.currentTarget as HTMLTableRowElement
-										).style.borderLeftColor =
-											"oklch(0.62 0.24 275 / 0.4)";
-									}}
-									onMouseLeave={(e) => {
-										(
-											e.currentTarget as HTMLTableRowElement
-										).style.borderLeftColor = "transparent";
-									}}
+									className="group cursor-pointer transition-colors duration-100 hover:bg-muted"
 									onClick={() =>
 										navigate(
 											`/session/${session.inviteCode}`
@@ -204,11 +153,7 @@ export function SessionTable({
 								>
 									<TableCell className="font-medium max-w-[200px] py-3">
 										<span
-											className="block truncate text-sm text-[oklch(0.88_0.008_270)] tracking-tight"
-											style={{
-												fontFamily:
-													"var(--font-display)",
-											}}
+											className="block truncate text-sm text-foreground tracking-tight font-medium"
 											title={session.name}
 										>
 											{session.name}
@@ -224,34 +169,17 @@ export function SessionTable({
 									</TableCell>
 									<TableCell className="py-3">
 										{session.isActive ? (
-											<span
-												className="inline-flex items-center gap-1.5 text-[10px] font-mono uppercase tracking-wider px-2 py-1 rounded"
-												style={{
-													background:
-														"oklch(0.72 0.2 145 / 0.1)",
-													border: "1px solid oklch(0.72 0.2 145 / 0.25)",
-													color: "oklch(0.72 0.2 145)",
-												}}
-											>
-												<span className="h-1.5 w-1.5 rounded-full bg-[oklch(0.72_0.2_145)] animate-live-pulse shrink-0" />
+											<span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-medium uppercase tracking-[0.05em] bg-accent-green-bg text-accent-green-fg">
+												<span className="h-1.5 w-1.5 rounded-full bg-accent-green-fg animate-live-dot shrink-0" />
 												Active
 											</span>
 										) : (
-											<span
-												className="inline-flex items-center text-[10px] font-mono uppercase tracking-wider px-2 py-1 rounded"
-												style={{
-													background:
-														"oklch(1 0 0 / 0.04)",
-													border: "1px solid oklch(1 0 0 / 0.08)",
-													color: "oklch(0.42 0.01 270)",
-												}}
-											>
+											<span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium uppercase tracking-[0.05em] bg-muted text-muted-foreground border border-border">
 												Idle
 											</span>
 										)}
 									</TableCell>
 
-									{/* Files column — expand toggle */}
 									<TableCell
 										className="py-3"
 										onClick={(e) => e.stopPropagation()}
@@ -260,7 +188,7 @@ export function SessionTable({
 											onClick={() =>
 												toggleExpand(session.id)
 											}
-											className="flex items-center gap-1.5 text-xs font-mono text-[oklch(0.50_0.01_270)] hover:text-[oklch(0.80_0.008_270)] transition-colors"
+											className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors"
 											aria-label={
 												isExpanded
 													? "Collapse files"
@@ -285,10 +213,10 @@ export function SessionTable({
 										</button>
 									</TableCell>
 
-									<TableCell className="py-3 text-xs font-mono text-[oklch(0.50_0.01_270)] tabular-nums">
+									<TableCell className="py-3 text-xs text-muted-foreground tabular-nums">
 										{session._count.participants}
 									</TableCell>
-									<TableCell className="py-3 text-xs font-mono text-[oklch(0.50_0.01_270)]">
+									<TableCell className="py-3 text-xs text-muted-foreground">
 										{formatDate(session.createdAt)}
 									</TableCell>
 									<TableCell
