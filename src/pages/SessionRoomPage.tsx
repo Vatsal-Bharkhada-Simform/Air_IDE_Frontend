@@ -47,6 +47,7 @@ export function SessionRoomPage() {
 	const token = useRootSelector((state) => state.auth.token);
 	const { data: userData } = useGetUserQuery();
 	const username = userData?.data.user.username ?? "";
+	const avatarSeed = userData?.data.user.avatarSeed ?? null;
 
 	// ── Socket / session join ────────────────────────────────────
 	const skipJoin = !roomId || !token;
@@ -374,6 +375,7 @@ export function SessionRoomPage() {
 				inviteCode={roomId ?? ""}
 				connectionStatus={connectionStatus}
 				username={username}
+				avatarSeed={avatarSeed}
 				onBack={() => navigate("/")}
 			/>
 

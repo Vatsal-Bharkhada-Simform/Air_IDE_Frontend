@@ -1,5 +1,5 @@
 import { ArrowLeft, Code } from "@phosphor-icons/react";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { AvatarImage } from "@/components/ui/AvatarImage";
 import { Button } from "@/components/ui/button";
 import {
 	Tooltip,
@@ -9,13 +9,13 @@ import {
 import type { SocketConnectionStatus } from "@/types/collabTypes";
 import { ConnectionChip } from "./ConnectionChip";
 import { InviteCodeBadge } from "./InviteCodeBadge";
-import { getInitials } from "./helpers";
 
 export interface SessionHeaderProps {
 	sessionName: string;
 	inviteCode: string;
 	connectionStatus: SocketConnectionStatus;
 	username: string;
+	avatarSeed?: string | null;
 	onBack: () => void;
 }
 
@@ -24,6 +24,7 @@ export function SessionHeader({
 	inviteCode,
 	connectionStatus,
 	username,
+	avatarSeed,
 	onBack,
 }: SessionHeaderProps) {
 	return (
@@ -111,14 +112,13 @@ export function SessionHeader({
 						border: "1px solid oklch(1 0 0 / 0.06)",
 					}}
 				>
-					<Avatar className="h-5 w-5">
-						<AvatarFallback
-							className="text-[9px] font-bold text-white"
-							style={{ background: "oklch(0.62 0.24 275)" }}
-						>
-							{getInitials(username)}
-						</AvatarFallback>
-					</Avatar>
+					<AvatarImage
+						seed={avatarSeed}
+						username={username}
+						className="h-5 w-5"
+						fallbackClassName="text-[9px] font-bold text-white"
+						fallbackStyle={{ background: "oklch(0.62 0.24 275)" }}
+					/>
 					<span className="text-xs font-mono text-[oklch(0.65_0.01_270)] max-w-[100px] truncate">
 						{username}
 					</span>

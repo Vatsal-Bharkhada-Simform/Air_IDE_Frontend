@@ -9,21 +9,10 @@ import {
 import { useNavigate } from "react-router";
 import { useGetUserQuery, useLogoutUserQuery } from "@/store/api/api";
 import { Button } from "@/components/ui/button";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { AvatarImage } from "@/components/ui/AvatarImage";
 import { CreateSessionDialog } from "@/components/dashboard/CreateSessionDialog";
 import { JoinSessionDialog } from "@/components/dashboard/JoinSessionDialog";
 import { SessionsTabs } from "@/components/dashboard/SessionsTabs";
-
-/* ─── Helpers ─────────────────────────────────────────────── */
-
-function getInitials(name: string) {
-	return name
-		.split(" ")
-		.map((w) => w[0])
-		.join("")
-		.toUpperCase()
-		.slice(0, 2);
-}
 
 /* ─── Logout Button ───────────────────────────────────────── */
 
@@ -136,16 +125,15 @@ export function DashboardPage() {
 								border: "1px solid oklch(1 0 0 / 0.06)",
 							}}
 						>
-							<Avatar className="h-5 w-5">
-								<AvatarFallback
-									className="text-[9px] font-bold text-white"
-									style={{
-										background: "oklch(0.62 0.24 275)",
-									}}
-								>
-									{getInitials(username)}
-								</AvatarFallback>
-							</Avatar>
+							<AvatarImage
+								seed={userData?.data.user?.avatarSeed}
+								username={username}
+								className="h-5 w-5"
+								fallbackClassName="text-[9px] font-bold text-white"
+								fallbackStyle={{
+									background: "oklch(0.62 0.24 275)",
+								}}
+							/>
 							<span className="text-xs font-mono text-[oklch(0.70_0.01_270)] max-w-[120px] truncate">
 								{username}
 							</span>

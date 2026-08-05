@@ -11,6 +11,7 @@ export type LoginResponseType = {
 			id: string;
 			username: string;
 			email: string;
+			avatarSeed: string | null;
 		};
 		token: string;
 	};
@@ -30,6 +31,7 @@ export type SignUpResponseType = {
 			id: string;
 			username: string;
 			email: string;
+			avatarSeed: string | null;
 			createdAt: string;
 		};
 		token: string;
@@ -48,6 +50,7 @@ export type MeResponseType = {
 			id: string;
 			email: string;
 			username: string;
+			avatarSeed: string | null;
 		};
 		token: string;
 	};

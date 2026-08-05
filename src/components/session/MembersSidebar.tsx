@@ -1,5 +1,5 @@
 import { CaretLeft, CaretRight, Users } from "@phosphor-icons/react";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { AvatarImage } from "@/components/ui/AvatarImage";
 import { Button } from "@/components/ui/button";
 import {
 	Tooltip,
@@ -7,7 +7,6 @@ import {
 	TooltipTrigger,
 } from "@/components/ui/tooltip";
 import type { SessionUser } from "@/types/collabTypes";
-import { getInitials } from "./helpers";
 
 export interface MembersSidebarProps {
 	users: SessionUser[];
@@ -82,16 +81,15 @@ export function MembersSidebar({
 								>
 									{/* Avatar */}
 									<div className="relative shrink-0">
-										<Avatar className="h-6 w-6">
-											<AvatarFallback
-												className="text-[9px] font-bold text-white"
-												style={{
-													backgroundColor: user.color,
-												}}
-											>
-												{getInitials(user.username)}
-											</AvatarFallback>
-										</Avatar>
+										<AvatarImage
+											seed={user.avatarSeed}
+											username={user.username}
+											className="h-6 w-6"
+											fallbackClassName="text-[9px] font-bold text-white"
+											fallbackStyle={{
+												backgroundColor: user.color,
+											}}
+										/>
 										{/* Online dot */}
 										<span
 											className="absolute -bottom-0.5 -right-0.5 h-2 w-2 rounded-full border border-[oklch(0.095_0.014_270)]"

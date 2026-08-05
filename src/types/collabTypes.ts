@@ -33,6 +33,7 @@ export interface TextSelection {
 export interface SessionUser {
 	userId: string;
 	username: string;
+	avatarSeed: string | null;
 	color: string;
 	cursor: CursorPosition;
 	selection: TextSelection | null;
